@@ -21,7 +21,8 @@ At the top of the page, you'll notice that there are **Platform** and **Administ
 
 For this workshop, we've created projects for each of you to work in. Projects are a way to organize your work and resources within the JFrog Platform. Each project has its own set of repositories, users, permissions and more. Throughout the workshop, you'll be working within your assigned project to complete the exercises.
 
-> [!IMPORTANT] Make sure you are working within your assigned project. You can switch between projects using the dropdown menu at the top of the left-hand navigation menu, as shown below.
+> [!IMPORTANT]
+> Make sure you are working within your assigned project. You can switch between projects using the dropdown menu at the top of the left-hand navigation menu, as shown below.
 
 ![Projects Selection](images/projects-selection.png)
 
