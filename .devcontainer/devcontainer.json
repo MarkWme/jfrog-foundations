@@ -1,0 +1,60 @@
+{
+  "name": "JFrog Foundations",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "JF_CLI_VERSION": "2.120.0"
+    }
+  },
+
+  // docker-in-docker is required by the CI and container scanning labs, which
+  // build and inspect an image from inside the Codespace. github-cli is used
+  // in lab 07 to set repository secrets without leaving the terminal.
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "JFrog.jfrog-vscode-extension",
+        "ms-azuretools.vscode-docker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "yzhang.markdown-all-in-one"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": false,
+        "git.openRepositoryInParentFolders": "always"
+      }
+    }
+  },
+
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Sample application",
+      "onAutoForward": "notify"
+    }
+  },
+
+  // updateContentCommand IS baked into a Codespaces prebuild. postCreateCommand
+  // is not. Dependency installation therefore lives in the former, and the
+  // latter is limited to the welcome banner and the health check. See
+  // docs/repo-setup.md and PLAN.md divergence D3.
+  "updateContentCommand": "bash .devcontainer/updateContent.sh",
+  "postCreateCommand": "bash .devcontainer/postCreate.sh",
+
+  "remoteUser": "vscode",
+
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  }
+}
