@@ -1,0 +1,16 @@
+# Dependabot is DELIBERATELY DISABLED for this repository.
+#
+# The sample applications under apps/ ship with known-vulnerable dependencies
+# on purpose. Those vulnerabilities are the teaching material for the Xray and
+# Curation labs. An automated dependency bump would silently destroy the
+# workshop by remediating the very findings the attendee is supposed to
+# discover and fix by hand.
+#
+# This file exists to make that intent explicit and machine-readable. An empty
+# "updates" list is a valid configuration that schedules no update checks.
+#
+# Do not add entries here. Do not merge automated dependency pull requests.
+# See CONTRIBUTING.md and CLAUDE.md.
+
+version: 2
+updates: []

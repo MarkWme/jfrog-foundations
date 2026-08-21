@@ -1,0 +1,37 @@
+# Environment configuration. Never committed. See .env.example.
+.env
+.env.local
+
+# Package manager configuration written by "jf npmc" and friends. These files
+# contain a resolved Artifactory URL and sometimes credentials.
+.npmrc
+.yarnrc
+.jfrog/local/
+
+# JFrog CLI local state
+.jfrog/jfrog-cli.conf*
+
+# Instructor handout. Contains attendee credentials. Never committed.
+provisioning/out/
+
+# Dependencies. Note that package-lock.json IS committed on purpose: the
+# sample applications rely on a pinned transitive dependency set.
+node_modules/
+
+# Build and scan output
+dist/
+build/
+coverage/
+*.tgz
+*-scan.json
+*-audit.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
