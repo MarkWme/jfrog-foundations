@@ -34,9 +34,21 @@ while IFS= read -r manifest; do
     if [ -f "${app_dir}/package-lock.json" ]; then
         ( cd "${app_dir}" && npm ci --no-audit --no-fund )
     else
-        echo "updateContent: no package-lock.json in ${app_dir}, falling back to npm install."
-        echo "updateContent: a committed lock file is expected here, see apps/*/README.md."
-        ( cd "${app_dir}" && npm install --no-audit --no-fund )
+        # --no-package-lock is load-bearing, not tidiness.
+        #
+        # The committed lock file has to be generated with a date cutoff
+        # (npm install --before=...), because the transitive vulnerabilities the
+        # later labs depend on resolve to patched versions today. If this
+        # fallback were allowed to write a lock file, it would write the WRONG
+        # one, silently, before anyone ran the deliberate command, and a
+        # well-meaning commit would then destroy lab 07.
+        #
+        # So: install into node_modules so the app runs, and write no lock file.
+        echo "updateContent: WARNING, no package-lock.json in ${app_dir}."
+        echo "updateContent: installing without writing a lock file."
+        echo "updateContent: the lock file must be generated deliberately."
+        echo "updateContent: see ${app_dir}/README.md, 'Generating the lock file'."
+        ( cd "${app_dir}" && npm install --no-package-lock --no-audit --no-fund )
     fi
 done < <(find apps -mindepth 2 -maxdepth 2 -name package.json -not -path '*/node_modules/*' | sort)
 
