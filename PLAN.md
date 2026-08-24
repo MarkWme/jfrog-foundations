@@ -160,18 +160,25 @@ the Catalog returned, truncated at ten per package:
 | `tar` | 4.4.8 | 10+ High | Direct, carrier of the transitive Critical |
 | `node-fetch` | 2.6.0 | 2 Medium | Direct, challenge remediation |
 | `express` | 4.16.0 | 2 Medium | Direct, never fixed |
-| `minimist` | 0.0.8 | 1 Critical, 1 Medium | **Transitive**, via `tar` to `mkdirp@0.5.x` |
+| `minimist` | 1.2.5 | 1 Critical | **Transitive**, via `tar` to `mkdirp@0.5.5` |
 | `highcharts` | latest | none relevant | Direct, **license** trip for Curation |
 
 Two deliberate choices in that table.
 
 **`minimist` is transitive, not direct.** `SPEC.md` lists it as a direct
-candidate, but `tar@4.4.8` depends on `mkdirp@^0.5.0`, which pins
-`minimist@0.0.8`. Leaving `minimist` out of `package.json` and letting it
-arrive through that chain gives lab 10's impact analysis a real two-hop trace
-to follow, and gives lab 07 a Critical that cannot be fixed by editing the
-line that caused it. That is a much better exercise than a direct pin. The
-exact resolved tree needs confirming in Phase 2 against a committed lock file.
+candidate. Leaving it out of `package.json` and letting it arrive through
+`tar@4.4.8` to `mkdirp` gives lab 10's impact analysis a real two-hop trace to
+follow, and gives lab 07 a Critical that cannot be fixed by editing the line
+that caused it. That is a much better exercise than a direct pin.
+
+The exact version matters here, and the first version of this plan had it
+wrong. `tar@4.4.8` declares `mkdirp@^0.5.0`, which **resolves today to
+`mkdirp@0.5.6`, and that pulls `minimist@1.2.8`, which is patched.** Resolved
+against late 2020 instead, `mkdirp@0.5.5` pulls `minimist@1.2.5`, which carries
+CVE-2021-44906 at Critical. The transitive Critical therefore exists only if
+the dependency tree is resolved as it stood at the time, which section 4 covers
+under lock file generation. Verified via the resolved graph on `deps.dev` and
+the JFrog Catalog.
 
 **`highcharts` is the non-CVE Curation trip.** The Catalog reports its license
 as `LicenseRef-jfrog-highcharts`, a non-OSI license reference rather than a
@@ -197,7 +204,7 @@ surface) true of the application itself, not only of the base image.
 | `node-fetch` 2.6.0 | 04, challenge | |
 | `lodash` 4.17.15 | 05, guided, via the IDE | |
 | `moment` 2.29.1 | 05, challenge | |
-| `minimist` 0.0.8 (transitive) | 07, by bumping `tar` | Impact analysis in 07 |
+| `minimist` 1.2.5 (transitive) | 07, by bumping `tar` | Impact analysis in 07 |
 | `tar` 4.4.8 | 07, as the carrier above | |
 | `express` 4.16.0 | never | 09, 10: findings that are not violations |
 | `jsonwebtoken` 8.5.1 | never | 10: scan results, SBOM, impact analysis |
@@ -255,8 +262,43 @@ application README than invent a purer justification.
 
 - All direct dependencies pinned to exact versions. No caret, no tilde.
 - `package-lock.json` **is committed.** Without it the transitive set drifts
-  and `minimist@0.0.8` is not guaranteed, which would break lab 07. This also
-  makes `npm ci` usable in the devcontainer prebuild.
+  and the transitive Critical is not guaranteed, which would break lab 07. This
+  also makes `npm ci` usable in the devcontainer prebuild.
+
+### Lock file generation
+
+The lock file is the single most load-bearing file in the sample application,
+because it, not `package.json`, is what fixes the transitive vulnerabilities the
+later labs depend on. Three constraints apply to producing it, and together they
+determine exactly one method.
+
+1. **It must resolve from public npm.** A lock file resolved through
+   Artifactory embeds the tenant hostname in every `resolved` URL, and this
+   repository may never contain a real tenant URL. Public URLs are also simply
+   correct for it: attendees fork this repository and resolve from public npm
+   until lab 07 re-points them at Artifactory.
+2. **It cannot be produced on the maintainer's machine.** That machine routes
+   npm to internal Artifactory instances, and its network blocks the public
+   registry outright, for metadata reads as well as installs.
+3. **It must be resolved as at late 2020**, or the transitive vulnerabilities
+   silently patch themselves, as the `minimist` case above shows.
+
+The method, run **inside a Codespace**, which is a clean environment with no npm
+configuration:
+
+```bash
+cd apps/node-dashboard
+npm install --before=2020-11-01 --no-audit --no-fund
+```
+
+`--before=2020-11-01` sits just after the newest direct pin, `axios@0.21.0`
+from October 2020. Every direct pin therefore still resolves, and the whole
+transitive tree is frozen period-accurate to that date. The result is not a
+contrivance: it is what a real repository that nobody has touched since 2020
+actually looks like, which is the point.
+
+Once generated and committed, `npm ci` reproduces it exactly and the date no
+longer matters.
 - No reset script, no toggle script, no dual dependency sets. `SPEC.md`
   section 6.1 is explicit and the `frogstatus`
   `scripts/dependency-states.json` pattern is deliberately **not** copied.
