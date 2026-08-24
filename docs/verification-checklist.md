@@ -12,8 +12,97 @@ attendee could be told to click something that is not there.
 named, and tick the box. When an item is corrected in the source file, remove
 the `> [!IMPORTANT] VERIFY:` callout there as well, and delete the row here.
 
-**Status:** build phase 1. Covers the skeleton, the devcontainer, the
-provisioning script and lab 00. Later phases add to it.
+**Status:** build phase 2. Covers the skeleton, the devcontainer, the
+provisioning script, lab 00 and the sample application. Later phases add to it.
+
+---
+
+## Sample application, phase 2
+
+Everything in this section is **blocking**. The application was written on a
+machine that cannot reach the public npm registry, so it has never had its
+dependencies installed, has never been run, and its image has never been built.
+This is the highest-risk group in the file.
+
+- [ ] **Generate the lock file, in a Codespace.**
+      `apps/node-dashboard/`, no `package-lock.json` committed yet.
+      ```bash
+      cd apps/node-dashboard
+      npm install --before=2020-11-01 --no-audit --no-fund
+      ```
+      **Why the date:** `2020-11-01` sits just after the newest direct pin,
+      `axios@0.21.0`. Without it the transitive tree resolves to current
+      patched versions and lab 07 loses its Critical.
+      **Why a Codespace:** a maintainer machine routes npm to Artifactory,
+      which would embed the tenant hostname in every `resolved` URL. This
+      repository may never contain a real tenant URL.
+
+- [ ] **Confirm the transitive Critical actually landed.**
+      ```bash
+      npm ls minimist mkdirp
+      ```
+      Expect `mkdirp@0.5.5` and `minimist@1.2.5`. If you see `minimist@1.2.8`
+      the cutoff did not apply, and **lab 07's remediation step has to be
+      redesigned around a direct dependency instead.**
+      **Why it matters:** this single version number is what lab 07's central
+      exercise rests on.
+
+- [ ] **Run the application.**
+      ```bash
+      cd apps/node-dashboard && npm start
+      ```
+      Then check every route: `/`, `/healthz`, `/api/status`, `/api/upstream`,
+      `/api/token`, `/api/admin`, `/api/diagnostics`.
+      **Watch for:** `tar@4.4.8` is old enough that its `fs` usage may warn or
+      fail on a modern Node, which would break `/api/diagnostics`. And confirm
+      the Highcharts chart renders, which means `express.static` is finding
+      `node_modules/highcharts/highcharts.js`.
+
+- [ ] **Confirm `axios@0.21.0` accepts `validateStatus: null`.**
+      `apps/node-dashboard/src/app.js`, `probeUpstream`.
+      Used so an unreachable upstream returns a status rather than throwing.
+      If the option name is wrong for this axios version the probe still works,
+      because it is wrapped in try/catch, but it would silently take the error
+      path on every non-2xx response.
+
+- [ ] **Build the container image, and time it.**
+      ```bash
+      cd apps/node-dashboard && docker build -t node-dashboard:dev .
+      ```
+      Must complete in under two minutes in a Codespace. Then run it and
+      confirm the app serves on 3000 under Node 16, and that the `HEALTHCHECK`
+      reports healthy.
+      **Watch for:** `node_modules` resolved by the build stage's npm 10 has to
+      run on the runtime stage's Node 16. Every dependency is pure JavaScript
+      so this should hold, but it is untested.
+
+- [ ] **Scan the image and confirm base image provenance.**
+      This is the property lab 07 depends on, and it is the one worth the most
+      care.
+      **Confirm:** the base image produces a credible set of findings, and that
+      those findings are unambiguously attributable to **Debian package
+      components rather than npm components** when an attendee looks at the
+      results in Xray.
+      High or critical severity is **not** required. Clear provenance matters
+      more than severity.
+      **Fallback if the set is too thin:** non-slim `node:16.20.2-bullseye`,
+      then a `buster` tag.
+
+- [ ] **Confirm `highcharts@8.2.0` trips a license-based Curation policy.**
+      The JFrog Catalog reports its license as `LicenseRef-jfrog-highcharts`, a
+      non-OSI license reference rather than a permissive SPDX identifier.
+      **Check:** an approved-license Curation policy on the attendee's own npm
+      remote actually blocks it.
+      **Why it matters:** it is the only non-CVE finding in the application, and
+      without it the Curation labs are a duplicate of the Xray labs.
+
+- [ ] **Capture the current recommended fix version for each dependency.**
+      `apps/node-dashboard/README.md`, dependency table.
+      The table carries verified CVE identifiers and severities but deliberately
+      does **not** hardcode "upgrade to version X", because those numbers go
+      stale between deliveries and would then contradict the tool.
+      **Check:** run `jf audit` on the delivery instance and note what it
+      recommends, for the instructor's own reference.
 
 ---
 

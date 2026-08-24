@@ -96,8 +96,9 @@ every customer environment.
 
 ## The sample application
 
-The workshop uses a small Node.js application in `apps/`, added in the next
-build phase, that ships with **known-vulnerable dependencies on purpose**. Those vulnerabilities are
+The workshop uses a small Node.js application,
+[`apps/node-dashboard`](apps/node-dashboard/README.md), that ships with
+**known-vulnerable dependencies on purpose**. Those vulnerabilities are
 the teaching material: you find them, trace them and fix them during the day,
 using the platform.
 
