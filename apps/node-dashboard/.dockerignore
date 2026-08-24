@@ -1,0 +1,26 @@
+# Keep the build context small and the build reproducible.
+
+# Never ship a locally resolved node_modules into the image. The build stage
+# runs "npm ci" from the committed lock file, which is the whole point: the
+# image contains exactly what the lock file says, not whatever happens to be on
+# the machine that ran the build.
+node_modules/
+
+# Not needed at build or runtime.
+.git/
+.gitignore
+.env
+.env.*
+*.md
+Dockerfile
+.dockerignore
+
+# Scan and audit output, in case anything was written here during a lab.
+*-scan.json
+*-audit.json
+*.tgz
+
+# Logs and editor noise
+*.log
+npm-debug.log*
+.DS_Store
