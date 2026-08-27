@@ -447,16 +447,24 @@ Provisioning. About thirty minutes.
 - [ ] **C4. `prep.sh --count 2` creates projects and users.** **HIGH.**
       Confirms `POST /access/api/v1/projects` and `POST /access/api/v2/users`.
 
-      **Attempt 1, 2026-08-27: projects and users created, membership did not
-      take.** The script reported `role assigned (Project Admin)` for both
-      attendees and exited clean, but neither project showed the user as a
-      member. Confirmed `jf api` transmits the body correctly by pointing it at
-      a local listener and reading the raw HTTP: the PUT carried
-      `Content-Length: 27` and `{"roles":["Project Admin"]}` on the right path.
-      So the request was well formed, and the platform accepted it while
-      assigning nothing, which points at the role name.
+      **2026-08-27: PASS.** Both projects and both users created. The
+      membership was queried directly and is correct:
+      ```json
+      {"members":[{"name":"user01","roles":["Project Admin"]}]}
+      ```
 
-      **The script now verifies instead of trusting a status code**, see C5.
+      A detour worth recording, because it cost time. The project appeared to
+      have no members in the UI, and that was read as the assignment having
+      silently failed. It had not: the API shows the membership present and
+      correct. The UI was being read wrongly, or members are shown somewhere
+      other than where they were looked for. **See D4**, which now has to pin
+      down where the platform actually displays project membership, because lab
+      00 sends attendees to look at exactly that.
+
+      Ruling out the transport was still worthwhile: `jf api` was pointed at a
+      local listener and the raw HTTP confirmed the PUT carries
+      `Content-Length: 27` and `{"roles":["Project Admin"]}` on the correct
+      path. So the request shape is verified rather than assumed.
 
       **Also noted: `user01` already existed** on this instance before the first
       real run, so its password was deliberately not reset and the handout reads
@@ -474,15 +482,34 @@ Provisioning. About thirty minutes.
       and watches inside their project. A role without those privileges makes
       lab 01 onward fail with permission errors that look like broken labs.
 
-      **Attempt 1, 2026-08-27: NOT CONFIRMED.** No 400 came back, but that
-      turned out to be worthless evidence: the assignment returned success and
-      no membership resulted. This item's original pass condition, "does it
-      avoid a 400", was simply the wrong test.
+      **2026-08-27: PASS. The working role name is `Project Admin`**, exactly as
+      guessed, listed as `"type": "ADMIN"` with `environments: [DEV, PROD]`.
 
-      **The real test is now automated.** `prep.sh` validates `ROLE` against
-      `GET /access/api/v1/projects/{key}/roles` before using it and fails with
-      the actual available names, then reads the membership back from
-      `GET /access/api/v1/projects/{key}/users` afterwards. To look by hand:
+      Its action list settles several later questions, so it is recorded here
+      rather than rediscovered:
+
+      | Lab needs | Actions present |
+      | --- | --- |
+      | 01, create repositories | `CREATE_LOCAL_REPO`, `CREATE_REMOTE_REPO`, `CREATE_VIRTUAL_REPO`, and the matching `DELETE_*` |
+      | 03, policies and watches | `POLICIES_SECURITY`, `WATCHES_SECURITY`, `RULES_SECURITY`, `READ_POLICIES_SECURITY` |
+      | 03 and 10, scan results | `TRIGGER_SECURITY`, `ISSUES_SECURITY`, `LICENCES_SECURITY`, `REPORTS_SECURITY` |
+      | 07 and 09, builds | `READ_BUILD`, `DEPLOY_BUILD`, `ANNOTATE_BUILD`, `DELETE_BUILD` |
+      | project self-service | `MANAGE_MEMBERS`, `MANAGE_RESOURCES` |
+
+      **The significant absence is Curation.** There is no curation action of any
+      kind in any of the nine predefined project roles. That is positive
+      evidence for what `PLAN.md` only assumed: Curation sits outside the
+      project boundary entirely, so no project role can grant it. **D12 cannot
+      be solved by picking a different project role**, and the permission has to
+      come from outside the project. Worth knowing before spending time on D12.
+
+      **The original pass condition for this item was the wrong test.** It was
+      "does the role step avoid a 400", and absence of an error proves nothing
+      about whether the assignment did anything. `prep.sh` now validates `ROLE`
+      against `GET /access/api/v1/projects/{key}/roles` before use and reads the
+      membership back from `GET /access/api/v1/projects/{key}/users` afterwards.
+      That change was made on a wrong diagnosis but is worth keeping on its own
+      merits. To look by hand:
       ```bash
       jf config add prep-check --url https://<instance> \
         --access-token "$JF_ACCESS_TOKEN" --interactive=false
@@ -534,6 +561,13 @@ carries the most design risk. About thirty minutes.
 - [ ] **D4. The project selector.** **HIGH.** Confirm its location and
       behavior, and specifically what a user assigned to exactly one project
       sees in it. Compare against `images/projects-selection.png`.
+
+      **Also pin down where the UI shows project membership.** During C4 a
+      project looked empty in the UI while the API reported the member present
+      and correctly roled. Whichever view was being read is not the one that
+      shows members, and lab 00 step 6 sends attendees to look at project
+      membership, so the lab needs the right path. Record where members actually
+      appear.
 
 - [ ] **D5. `scripts/setup.sh` works via username and password.** **HIGH.**
       ```bash
