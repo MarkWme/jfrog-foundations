@@ -29,33 +29,34 @@ the answer inline. Several later decisions depend on these values.
 No tenant, no Codespace. About five minutes, and worth doing first because it is
 free and catches the most embarrassing class of error.
 
-- [ ] **A1.** Push the branch and open the repository on github.com.
-      *MEDIUM.*
+**Stage A is complete.** Verified 2026-08-24.
 
-- [ ] **A2. The lab 00 Mermaid diagram renders as a diagram.**
+- [x] **A1.** Push the branch and open the repository on github.com.
+      *MEDIUM.* **Result: done.**
+
+- [x] **A2. The lab 00 Mermaid diagram renders as a diagram.**
       `labs/00-setup/README.md`, Concept section. **HIGH.**
-      Syntax-reviewed but never rendered, because rendering it locally would
-      have meant an npm install outside the Artifactory package resolution
-      policy.
-      **Watch for:** the `<br/>` breaks inside node labels, the apostrophe in
-      "Other attendees' projects", and the two subgraph titles.
-      **If it fails:** a broken Mermaid block renders as raw text, on the
-      attendee's very first page.
+      **Result: renders correctly.** The `<br/>` breaks, the apostrophe in
+      "Other attendees' projects" and both subgraph titles are all fine. The
+      same constructs are therefore safe to reuse in the diagrams for labs 01
+      to 03.
 
-- [ ] **A3. Callouts render as callouts, not as blockquotes.**
-      `> [!IMPORTANT]` in lab 00, `> [!WARNING]` in
-      `apps/node-dashboard/README.md`, `> [!NOTE]` at the end of lab 00.
-      *MEDIUM.*
+- [x] **A3. Callouts render as callouts, not as blockquotes.**
+      `> [!IMPORTANT]`, `> [!WARNING]`, `> [!NOTE]`. *MEDIUM.*
+      **Result: all three render correctly.** Confirms the house style for
+      `VERIFY:` flags.
 
-- [ ] **A4. Tables render.** The module index in the root README, and the
-      dependency table in `apps/node-dashboard/README.md`, which is wide.
-      *MEDIUM.*
+- [x] **A4. Tables render.** *MEDIUM.*
+      **Result: correct**, including the wide dependency table in
+      `apps/node-dashboard/README.md`.
 
-- [ ] **A5. Decide the license.** `LICENSE` is currently MIT, chosen to match
-      the reference workshop. A JFrog-owned public repository may need
-      Apache-2.0. **MEDIUM**, and it is a one-line swap, but it needs a decision
-      from someone rather than a guess from me.
-      **Record:** MIT or Apache-2.0.
+- [ ] **A5. Decide the license.** *MEDIUM.* **DEFERRED, not a verification
+      item.**
+      `LICENSE` is currently MIT, chosen to match the reference workshop.
+      **Owner: Mark, pending confirmation from JFrog's open source team.**
+      Not blocking any build phase. It is a single file swap whenever the answer
+      arrives, and the only other place the license is named is the last line of
+      the root README.
 
 ---
 

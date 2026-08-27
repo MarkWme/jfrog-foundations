@@ -36,8 +36,9 @@ right and the workshop should not lose them:
 
 The existing `01 - Setup and Configuration/` tree uses spaces in directory
 names, which `SPEC.md` section 2 forbids. Phase 1 replaces it with `labs/`.
-The three existing screenshots are still useful and get moved to
-`labs/01-artifactory/images/`, renamed to lowercase hyphenated names.
+The three existing screenshots are still useful and were recovered into
+`labs/00-setup/images/`, not `labs/01-artifactory/`: signing in and selecting a
+project turned out to belong in lab 00 rather than lab 01.
 
 ---
 
@@ -51,7 +52,7 @@ Follows `SPEC.md` section 4, with the additions marked.
   CLAUDE.md                        Already present, extended in Phase 1
   PLAN.md                          This file
   CONTRIBUTING.md                  Includes the no-dependency-bumps rule
-  LICENSE                          Apache-2.0
+  LICENSE                          MIT for now, see "Still open" in section 12
   .env.example
   .gitignore
   .dockerignore                    (at app level, see section 4)
@@ -586,6 +587,14 @@ be able to get unstuck without the instructor. Lab 02's troubleshooting section
 and `docs/troubleshooting.md` both cover it: how to tell a Curation block from
 a network failure, how to read the block message, and the two legitimate exits,
 waiver request or policy correction.
+
+### Still open
+
+**The repository license.** `LICENSE` is MIT, chosen to match the reference
+workshop. Mark is confirming the correct choice with JFrog's open source team.
+Not blocking any build phase: it is a single file swap, and the only other
+place the license is named is the last line of the root README. Tracked as A5
+in `docs/verification-checklist.md`.
 
 ---
 
