@@ -125,9 +125,51 @@ heading "JFrog connection"
 
 server_id="${JF_SERVER_ID:-workshop}"
 
+# Whether a JFrog CLI server configuration exists.
+#
+# The exit code is NOT usable for this. "jf config show <missing-id>" prints
+#     [Error] Server ID '<id>' does not exist.
+# and still exits 0, verified against JFrog CLI 2.120 and 2.121. An earlier
+# version of this script tested the exit code and therefore reported every
+# fresh Codespace as already connected, then went on to ping a server that did
+# not exist.
+#
+# So match the output instead. That is stable, and unlike "jf config export" it
+# never emits a credential to stdout.
+# Note the here-string rather than a pipe. Under "set -o pipefail",
+# "jf config show ... | grep -q ..." reports failure even on a match: grep -q
+# exits at the first hit, jf is killed by SIGPIPE and returns 141, and pipefail
+# surfaces that as the pipeline's status. That turned this check into a
+# different always-wrong answer, which a one-directional test would not have
+# caught. Feeding grep from a here-string removes the pipeline entirely.
+jf_server_configured() {
+    local shown
+    shown="$(jf config show "$1" 2>/dev/null)" || true
+    grep -qE "^Server ID:[[:space:]]+$1[[:space:]]*$" <<<"${shown}"
+}
+
+# Runs a command with a hard time limit and with stdin detached.
+#
+# Both halves matter, because this script runs during container creation and
+# anything that blocks here blocks the Codespace coming up. Detaching stdin
+# stops an unexpected interactive prompt from waiting forever. The time limit
+# stops a network call from doing the same. An attendee watching a stalled
+# terminal cannot tell a slow network from a hang, so neither is acceptable.
+#
+# "timeout" is coreutils and is present in the devcontainer. It is absent from
+# stock macOS, so fall back to running unbounded rather than failing outright.
+run_bounded() {
+    local limit="$1"; shift
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "${limit}" "$@" </dev/null
+    else
+        "$@" </dev/null
+    fi
+}
+
 if ! command -v jf >/dev/null 2>&1; then
     printf '%s %-16s skipped, JFrog CLI missing\n' "${INFO}" "connection"
-elif ! jf config show "${server_id}" >/dev/null 2>&1; then
+elif ! jf_server_configured "${server_id}"; then
     printf '%s %-16s no server named "%s" configured yet\n' \
         "${INFO}" "connection" "${server_id}"
     echo ""
@@ -138,9 +180,19 @@ elif ! jf config show "${server_id}" >/dev/null 2>&1; then
 else
     printf '%s %-16s server "%s" configured\n' "${PASS}" "connection" "${server_id}"
 
-    if jf rt ping --server-id "${server_id}" >/dev/null 2>&1; then
+    ping_rc=0
+    run_bounded 20 jf rt ping --server-id "${server_id}" >/dev/null 2>&1 || ping_rc=$?
+
+    if [ "${ping_rc}" -eq 0 ]; then
         printf '%s %-16s Artifactory reachable and credentials accepted\n' \
             "${PASS}" "jf rt ping"
+    elif [ "${ping_rc}" -eq 124 ]; then
+        # 124 is what timeout returns when it kills the command.
+        printf '%s %-16s timed out after 20s\n' "${WARN}" "jf rt ping"
+        echo "         Artifactory did not answer in time. Usually a network or"
+        echo "         proxy problem rather than a wrong password."
+        echo "         See docs/codespaces-troubleshooting.md."
+        warnings=$((warnings + 1))
     else
         printf '%s %-16s failed\n' "${WARN}" "jf rt ping"
         echo "         The server is configured but Artifactory did not answer."
@@ -160,7 +212,7 @@ else
     # confirmation step in lab 00.
     # https://docs.jfrog.com/artifactory/reference/get-repositories
     if [ -n "${JF_PROJECT:-}" ]; then
-        if jf rt curl -s -XGET "/api/repositories?project=${JF_PROJECT}" \
+        if run_bounded 20 jf rt curl -s -XGET "/api/repositories?project=${JF_PROJECT}" \
             --server-id "${server_id}" >/dev/null 2>&1; then
             printf '%s %-16s project "%s" queried successfully\n' \
                 "${PASS}" "project access" "${JF_PROJECT}"

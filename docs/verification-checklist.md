@@ -69,7 +69,7 @@ cleanly without credentials.
 About thirty minutes. **Do B5 and B6 before B7**, since the app cannot run
 without dependencies.
 
-- [ ] **B1. Create a Codespace on a fresh personal fork, and time it.**
+- [x] **B1. Create a Codespace on a fresh personal fork, and time it.**
       **HIGH.** Target is under five minutes cold on 2-core, with no prebuild.
       Measure the **attendee's** path, on a fork, not the maintainer's.
       **Record:** the cold time.
@@ -98,13 +98,15 @@ without dependencies.
       prebuild. Comfortably inside the five minute target, and the parts that
       dominate (base image pull, features) are exactly what a prebuild removes.
 
-      **On the retest, also confirm:** the workspace is writable as `node`, and
-      `docker info` works as `node` rather than only as root, since the
-      docker-in-docker feature adds the remote user to the `docker` group and
-      that group membership was previously computed for a user that did not
-      exist.
+      **Attempt 2, 2026-08-27 after the `remoteUser` fix and the Node 22 bump:
+      PASS.** 2 min 40 s, clean start, no recovery container.
+      `docker info` succeeded as `node`, which also settles the follow-on
+      concern: the docker-in-docker feature put the remote user in the `docker`
+      group correctly once that user actually existed.
+      **Recorded cold time: 2 min 40 s**, against a five minute target.
 
-- [ ] **B2. The welcome banner appears**, naming lab 00. *MEDIUM.*
+- [x] **B2. The welcome banner appears**, naming lab 00. *MEDIUM.*
+      **Result: pass.**
 
 - [ ] **B3. `scripts/verify.sh` reports every tool present.**
       **HIGH.** Expect **Node 22** with no version warning, `jf` 2.120.0 with no
@@ -116,6 +118,11 @@ without dependencies.
       **Watch for:** the Docker daemon check. A warning here immediately after
       start is normal and it should clear on a re-run.
 
+      **Result 2026-08-27: pass.** Node v22.16.0 with no version warning, which
+      confirms the Node 22 bump landed. `jf version 2.120.0` with no pin drift.
+      npm 10.9.2, Docker 29.7.2, gh 2.98.0, jq 1.6, git 2.49.0, and the Docker
+      daemon reported reachable rather than warning, so no re-run was needed.
+
 - [ ] **B4. `verify.sh` exits zero with no JFrog server configured.**
       **HIGH.** The "JFrog connection" section should read "no server named
       workshop configured yet" as information, not failure.
@@ -124,6 +131,49 @@ without dependencies.
       ```
       **If it fails:** container creation would report a scary warning to every
       attendee before lab 00, which is exactly the first impression to avoid.
+
+      **Attempt 1, 2026-08-27: FAILED. Two bugs found, both fixed, needs a
+      retest.** On a fresh Codespace with no credentials, `verify.sh` printed
+
+      ```
+        [ ok ] connection       server "workshop" configured
+      ```
+
+      which is impossible, and then stopped producing output. `postCreate.sh`
+      was still running after ten minutes.
+
+      **Bug 1: the existence check could never fail.** The check tested the exit
+      code of `jf config show <id>`. That command prints
+      `[Error] Server ID '<id>' does not exist.` and **still exits 0**, verified
+      against JFrog CLI 2.120 and 2.121. So every fresh Codespace was reported
+      as already connected, and `verify.sh` went on to ping a server that did
+      not exist. Fixed by matching the output instead.
+
+      **Bug 2: nothing bounded the network calls.** `jf rt ping` fails in about
+      a second when reproduced locally, so the exact reason it stalled in the
+      Codespace is **not confirmed**; the most likely candidate is an
+      interactive prompt waiting on a terminal that a manual run provides and a
+      creation-time run does not. Rather than chase it, both `jf` calls now run
+      with a 20 s limit and with stdin detached, and `postCreate.sh` bounds the
+      whole health check at 180 s. A health check is the last step of container
+      creation, so it must not be able to block a Codespace coming up under any
+      circumstances.
+
+      A third bug was caught while testing the fix, and is worth recording
+      because it is the same shape as bug 1. The replacement check was written
+      as `jf config show | grep -q ...`, which under `set -o pipefail` reports
+      failure **even on a match**: `grep -q` exits at the first hit, `jf` is
+      killed by SIGPIPE and returns 141, and pipefail surfaces that as the
+      pipeline's status. It had simply swapped one always-wrong answer for
+      another. Only testing both directions caught it.
+
+      **On the retest, check both directions**, not just the fresh one:
+      ```bash
+      bash scripts/verify.sh; echo "exit=$?"          # expect: not configured, exit 0
+      ```
+      then again after lab 00 has configured a server, where it must report
+      `[ ok ] connection` and a real ping result. Both are now covered by
+      regression tests run against an empty and a populated config directory.
 
 - [ ] **B5. Generate the sample application lock file.**
       **BLOCKER.** No `package-lock.json` is committed yet.

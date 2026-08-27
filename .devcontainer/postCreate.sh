@@ -51,10 +51,29 @@ echo ""
 # non-zero if a required tool is missing, but a failed health check must not
 # fail container creation: a usable container with a clear warning is far
 # better than a Codespace that refuses to open.
-if [ -x scripts/verify.sh ] || [ -f scripts/verify.sh ]; then
+if [ -f scripts/verify.sh ]; then
     echo "Running environment health check..."
     echo ""
-    if ! bash scripts/verify.sh; then
+
+    # Bounded, and with stdin detached. This is the last step of container
+    # creation, so a health check that blocks blocks the whole Codespace coming
+    # up. verify.sh already bounds its own network calls; this is the backstop
+    # for anything it does not anticipate. A usable container with a warning
+    # always beats a Codespace stuck on a progress bar.
+    verify_rc=0
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 180 bash scripts/verify.sh </dev/null || verify_rc=$?
+    else
+        bash scripts/verify.sh </dev/null || verify_rc=$?
+    fi
+
+    if [ "${verify_rc}" -eq 124 ]; then
+        echo ""
+        echo "WARNING: the environment health check did not finish within 180s"
+        echo "         and was stopped. The container is still usable."
+        echo "         Run 'bash scripts/verify.sh' by hand to see where it"
+        echo "         stalls, and tell your instructor."
+    elif [ "${verify_rc}" -ne 0 ]; then
         echo ""
         echo "WARNING: the environment health check reported problems above."
         echo "         Show this output to your instructor before starting lab 00."
