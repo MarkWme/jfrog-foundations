@@ -202,9 +202,14 @@ left-hand navigation menu:
 
 ![The project selection dropdown](images/projects-selection.png)
 
-You will see two entries: **All Projects**, and your own project. Everyone else's
-projects are invisible to you, which is the isolation described in the Concept
-section doing its job.
+You will see **All Projects**, your own project, and everyone else's projects
+too. That is expected, and it is worth understanding rather than worrying about:
+you can *see* other projects but you cannot change anything in them. Read-only
+visibility comes bundled with a platform-level permission you need later, for the
+Curation labs.
+
+Isolation here is about **who can change what**, not about who can see what. Your
+project is the only one you can write to.
 
 **Select your project.**
 

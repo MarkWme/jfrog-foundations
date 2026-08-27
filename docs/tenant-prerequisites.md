@@ -45,7 +45,35 @@ lives in [`../provisioning/README.md`](../provisioning/README.md).
    [`repo-setup.md`](repo-setup.md), and note the warning there that a fork
    may not inherit the upstream prebuild.
 
-7. **Walk the verification checklist.** Every unverified UI click path and
+7. **Check for pre-existing Curation policies, and disable or narrow any that
+   apply to all repositories.**
+
+   This is the one prerequisite that can break the workshop silently, and it was
+   found the hard way. List them:
+
+   ```bash
+   jf api --method GET --server-id <your-admin-server> /xray/api/v1/curation/policies
+   ```
+
+   Look at `enabled` and `scope` on each result. **An enabled policy with
+   `"scope": "all_repos"` applies to every attendee's repositories**, including
+   ones created later in the day.
+
+   Why it matters: the sample application deliberately ships six dependencies at
+   Critical or High severity. A typical CVSS-based blocking policy scoped to all
+   repositories blocks **six of its eight direct dependencies at install time**,
+   so `npm install` through Artifactory fails in lab 07 and the vulnerabilities
+   the whole workshop is built on never reach a scan. `block_from_cache` is
+   commonly `true` as well, so an already-cached copy does not save you.
+
+   Worse, a policy with `"waiver_request_config": "forbidden"` cannot be waived
+   around, so there is no in-lab escape.
+
+   A fresh trial instance should have none of these. An instance that has been
+   used for other demonstrations very likely does. Either disable them for the
+   delivery or re-scope them to `specific_repos` that attendees will not touch.
+
+8. **Walk the verification checklist.** Every unverified UI click path and
    every command needing a live tenant is collected in
    [`verification-checklist.md`](verification-checklist.md). Walk it against
    this instance in one pass. Doing this once, before the day, is the single

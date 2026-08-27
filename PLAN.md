@@ -464,6 +464,53 @@ action appears in any of the nine predefined project roles.** So this is not a
 matter of picking the right project role. Curation genuinely sits outside the
 project boundary today.
 
+### Curation has no UI for a non-admin attendee
+
+Verified on a live instance, 2026-08-27. With `policy_manager` granted, an
+attendee **can** manage Curation policies through the API, confirmed by
+`GET /xray/api/v1/curation/policies` returning 200 and a full policy list. But
+Curation appears on **no menu** for them. The permission is real; the UI does not
+expose it below platform admin.
+
+So **labs 02 and 11 are CLI and API led, not click-path led.** That is a change
+of shape for two labs, and on balance a good one for this audience: it is
+reproducible, it is copy-pasteable, it does not rot when the UI moves, and it
+leaves the attendee with commands they can run in their own environment
+afterwards, which `SPEC.md` section 7 makes a core goal. The instructor can still
+demonstrate the admin UI on the projector.
+
+It also changes lab 11, which was planned as "Dashboard, audit logs, waiver
+approvals" in the UI. The dashboard and audit views are admin-only, so lab 11
+becomes: query your own audit events and waivers through the API, while the
+instructor shows the dashboard. `SPEC.md` section 10 assigns lab 11 to Part 4,
+the UI part, so this is a genuine deviation to flag rather than absorb.
+
+**The API surface is under `/xray/`, not `/curation/`:**
+`GET|POST /xray/api/v1/curation/policies`, and
+`GET|PUT /xray/api/v1/curation/policies/{id}`.
+
+The policy object, taken from a real response, is what lab 02 has to teach:
+
+| Field | Values seen | Why it matters to the labs |
+| --- | --- | --- |
+| `scope` | `all_repos`, `specific_repos` | This is the D13 risk in one field. `all_repos` is one word away from breaking the room |
+| `policy_action` | `block` | |
+| `condition_id` | references a condition | Conditions are separate objects, listed via the conditions endpoint |
+| `waiver_request_config` | `manual`, `forbidden` | **Exactly the lab 02 to lab 11 waiver thread.** `manual` allows a waiver request, `forbidden` does not |
+| `decision_owners` | group names, e.g. `readers` | Who may approve a waiver. Lab 11 needs the attendee in this group |
+| `block_from_cache` | `true` | A policy blocks even an already-cached package, which is worth stating in the lab |
+| `enabled` | boolean | Lets the instructor disable a policy without deleting it |
+
+Condition templates confirmed present, both directly useful:
+
+- **`isImmature`**, parameterized by `package_age_days`. This is precisely the
+  worked challenge example in `SPEC.md` section 8.2, the CISO asking that no
+  newly published package can be pulled into a build. It exists, it is tunable,
+  and the challenge can be solved for real.
+- **`CVECVSSRange`**, parameterized by `vulnerability_cvss_score_range` and
+  `apply_only_if_fix_is_available`.
+- A **malicious package** condition.
+
 ### This constraint has a known expiry date
 
 **Project scoping for Curation is on the JFrog roadmap, expected within one or

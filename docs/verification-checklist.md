@@ -660,7 +660,7 @@ carries the most design risk. About thirty minutes.
       **2026-08-27: PASS.** Returns OK for a project-scoped attendee, so the
       lab 00 checkpoint stands as written. Blocker cleared.
 
-- [ ] **D7. The project access check in `verify.sh` is meaningful.** **HIGH.**
+- [x] **D7. The project access check in `verify.sh` is meaningful.** **HIGH.**
       It calls `GET /api/repositories?project=<key>`. Run it with a **bogus**
       project key too.
       **If both return 200**, the check proves nothing, and a check that always
@@ -715,7 +715,7 @@ carries the most design risk. About thirty minutes.
       project key prefix was applied automatically, exactly as lab 01 will
       describe. Lab 01 can be written against this behavior.
 
-- [ ] **D12. What permission does creating a Curation policy actually need?**
+- [x] **D12. What permission does creating a Curation policy actually need?**
       **BLOCKER**, and the largest known unknown in the whole design.
       Curation has no project scoping. `PLAN.md` records the decision to grant
       whatever is required, up to platform administrator.
@@ -791,8 +791,34 @@ carries the most design risk. About thirty minutes.
       | B | Drop it, make labs 02 and 11 instructor-demonstrated | Clean isolation, but attendees lose hands-on Curation, which is a headline of the workshop |
       | C | Grant it only before lab 02, via a `prep.sh` flag the instructor runs mid-day | Clean isolation for labs 00 and 01, extra moving part on the day |
 
-      A is the likely answer if the API test returns 200, since read-only
-      visibility of a neighbour's project is a small price. Not deciding yet.
+      **RESOLVED 2026-08-27: option A.** `policy_manager` stays.
+
+      Both tests came back positive. `prep.sh` reported
+      `curation user01 holds 'Manage policies'`, and as the attendee
+      `GET /xray/api/v1/curation/policies` returned **200** with the full policy
+      list. So the permission is genuinely effective and **only the UI is
+      missing**. Lab 00 step 6 is reworded: an attendee sees every project but
+      can write only to their own, and isolation is framed as who can change
+      what rather than who can see what, which is both accurate and a better
+      mental model.
+
+      **Two consequences, both larger than the permission question itself.**
+
+      **1. Labs 02 and 11 become CLI and API led.** Curation is on no menu for a
+      non-admin, so click paths are not available to teach. `PLAN.md` section 7
+      records the API surface, which is under `/xray/` rather than `/curation/`,
+      and the full policy object shape taken from a real response. Three fields
+      matter to the lab design: `scope` with values `all_repos` and
+      `specific_repos`, which is the D13 risk in a single field;
+      `waiver_request_config` with `manual` and `forbidden`, which is exactly the
+      lab 02 to lab 11 waiver thread; and `decision_owners`, a group, which lab
+      11 needs the attendee to be in. Both condition templates the workshop
+      planned to use exist and are parameterized: `isImmature` by
+      `package_age_days`, which makes the section 8.2 CISO challenge solvable for
+      real, and `CVECVSSRange`.
+
+      **2. A delivery blocker was found in the response, unrelated to
+      permissions.** See H1 below.
 
       **Narrowed by Stage C, 2026-08-27.** No curation action exists in any of
       the nine predefined project roles, so this could never have been solved by
@@ -817,6 +843,56 @@ carries the most design risk. About thirty minutes.
       scope selection must be impossible to skip, not merely mentioned.
       `PLAN.md` section 7 records it as a checkpointed step with an explicit
       wrong-answer warning rather than a passing note in prose.
+
+---
+
+## Stage H: instance hygiene
+
+Found during Stage D rather than planned, and promoted to its own stage because
+it is a **delivery blocker** that no other item would have caught. Lettered H to
+avoid renumbering anything.
+
+- [ ] **H1. No enabled Curation policy is scoped to all repositories.**
+      **BLOCKER.**
+      ```bash
+      jf api --method GET --server-id <admin> /xray/api/v1/curation/policies
+      ```
+      Check `enabled` and `scope` on every result. An enabled policy with
+      `"scope": "all_repos"` applies to every attendee repository, including ones
+      created later in the day.
+
+      **Found on the development instance, 2026-08-27.** Four enabled policies,
+      three of them `all_repos`:
+
+      | id | name | scope | waiver | condition |
+      | --- | --- | --- | --- | --- |
+      | 1 | `malicious-block` | all_repos | manual | Malicious package |
+      | 2 | `critical-cve-block` | all_repos | **forbidden** | CVSS 9 to 10 |
+      | 3 | `high-cve-block` | all_repos | manual | CVSS 7.0 to 8.9 |
+      | 4 | `cooldown-block` | all_repos | manual | `isImmature`, 14 days |
+
+      Cross-referenced against the sample application, **six of its eight direct
+      dependencies would be blocked at install time**: `axios`, `lodash` and the
+      transitive `minimist` by policy 2, and `tar`, `moment` and `jsonwebtoken`
+      by policy 3. Only `express` and `node-fetch` survive.
+
+      So on an instance in this state, `npm install` through Artifactory fails in
+      lab 07 and **the vulnerabilities the entire workshop is built on never
+      reach a scan**. `block_from_cache` is `true` on all four, so a cached copy
+      does not help, and policy 2 has `waiver_request_config: "forbidden"`, so
+      there is no in-lab escape either.
+
+      A fresh trial should have none of these. **An instance previously used for
+      demonstrations very likely does**, and that is the realistic case for an SE
+      reusing a tenant. Disable them for the delivery, or re-scope them to
+      `specific_repos` attendees will not touch.
+
+      Recorded as step 7 of `docs/tenant-prerequisites.md`.
+
+      **Note this cuts the other way too**, and it is worth saying to the room:
+      these policies are exactly what a customer *should* have in production. The
+      workshop needs them out of the way to teach; a real environment wants them
+      on.
 
 ---
 
