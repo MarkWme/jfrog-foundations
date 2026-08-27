@@ -243,7 +243,7 @@ validate_role() {
     # response shape is not documented in the reference and a wrong jq path
     # would silently look like a missing role.
     if grep -qF "\"${ROLE}\"" "${RESP}"; then
-        echo "  roles    '${ROLE}' exists on this instance"
+        echo "  roles    '${ROLE}' validated against this instance (checked once)"
         return 0
     fi
 
@@ -333,6 +333,23 @@ HANDOUT_MD="${OUT_DIR}/handout.md"
 HANDOUT_CSV="${OUT_DIR}/handout.csv"
 rows=()
 
+# Passwords are carried forward from a previous handout.
+#
+# Without this, re-running the script destroyed the credentials you had already
+# distributed: existing users are never given a new password, so every row came
+# back as a placeholder and the handout became useless. Re-running is supposed to
+# be safe, and a handout you cannot hand out is not safe.
+#
+# Reads field 4 of the previous CSV, keyed on the username in field 3. No field
+# written by this script contains a comma, which is what makes that safe.
+prev_password() {
+    local username="$1"
+    [ -f "${HANDOUT_CSV}" ] || return 1
+    awk -F',' -v u="${username}" \
+        'NR > 1 && $3 == u { print $4; found = 1 } END { exit !found }' \
+        "${HANDOUT_CSV}"
+}
+
 for i in $(seq 1 "${COUNT}"); do
     key="$(printf '%s%02d' "${PREFIX}" "${i}")"
     username="${key}"
@@ -395,12 +412,25 @@ for i in $(seq 1 "${COUNT}"); do
         200|201) echo "  user     created"; step_ok=$((step_ok + 1)) ;;
         409)
             echo "  user     already exists, password NOT changed"
-            password="(unchanged, see previous handout)"
-            password_note="existing user"
+            carried="$(prev_password "${username}" 2>/dev/null || true)"
+            case "${carried}" in
+                ""|"("*)
+                    # No previous handout, or the previous run could not
+                    # determine it either. Say what to do rather than just
+                    # reporting the gap.
+                    password="(unknown: reset in the UI or delete the user and re-run)"
+                    password_note="existing user; password unknown"
+                    ;;
+                *)
+                    password="${carried}"
+                    password_note="existing user; password carried forward"
+                    echo "           password carried forward from the previous handout"
+                    ;;
+            esac
             step_skip=$((step_skip + 1))
             ;;
         *)  echo "  user     FAILED (${code}): $(err_body)"
-            password="(not set, creation failed)"
+            password="(not set: creation failed)"
             password_note="FAILED"
             step_fail=$((step_fail + 1))
             ;;
@@ -444,6 +474,13 @@ if [ "${DRY_RUN}" -eq 1 ]; then
     echo "Dry run complete. No handout written."
     exit 0
 fi
+
+# Keep one generation of the previous handout. Cheap insurance: the carry
+# forward above depends on the old CSV, so if it is ever wrong there is still a
+# copy to read by hand.
+for f in "${HANDOUT_MD}" "${HANDOUT_CSV}"; do
+    [ -f "${f}" ] && cp "${f}" "${f}.bak"
+done
 
 {
     echo "# JFrog Foundations: attendee handout"

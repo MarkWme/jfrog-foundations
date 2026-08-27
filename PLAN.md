@@ -449,6 +449,33 @@ necessary, up to and including platform administrator. That is settled as far
 as this plan is concerned, but it has a consequence for how the labs are
 written. See R1.
 
+Confirmed against a live instance during Stage C verification: **no curation
+action appears in any of the nine predefined project roles.** So this is not a
+matter of picking the right project role. Curation genuinely sits outside the
+project boundary today.
+
+### This constraint has a known expiry date
+
+**Project scoping for Curation is on the JFrog roadmap, expected within one or
+two months of August 2026.** Until it lands, Curation is done at the tenant
+administration level, with the naming and repository-scoping discipline above
+doing the isolation work by convention.
+
+That changes how labs 02 and 11 should be built. Write them so the switch is a
+small, localized edit rather than a rewrite:
+
+- Keep every Curation instruction in labs 02 and 11 only. Do not let
+  tenant-level Curation assumptions leak into other labs.
+- Treat the attendee prefix on policy names and the explicit repository scoping
+  as **one clearly marked block** in each lab, so it can be replaced by "work
+  inside your project" when project scoping arrives.
+- Say plainly in the lab text that this is a current platform limitation rather
+  than a design choice, and that it is expected to change. An attendee who has
+  spent three labs inside a project boundary will notice the inconsistency, and
+  "this is on the roadmap" is a better answer than silence.
+- `docs/instructor-guide.md` gets a dated note, so whoever picks this up in six
+  months knows to check whether the workaround is still needed.
+
 ---
 
 ## 8. Provisioning

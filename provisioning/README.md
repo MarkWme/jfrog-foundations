@@ -76,12 +76,19 @@ environment variable.
 Every step treats "already exists" as success. Re-running after a partial
 failure fixes up what is missing and leaves the rest alone.
 
-One exception worth knowing: if a **user already exists**, the script does not
-reset their password, because doing so would invalidate a handout you may
-already have distributed. Those rows appear in the handout with the password
-column reading `(unchanged, see previous handout)` and a note of `existing
-user`. If you have lost the password for an existing attendee, reset it in the
-platform UI.
+If a **user already exists**, the script does not reset their password, because
+doing so would invalidate a handout you may already have distributed.
+
+To keep the handout usable across re-runs, **passwords are carried forward from
+the previous `handout.csv`**. So a re-run reproduces a complete, valid handout
+rather than a table full of placeholders. The previous handout is also copied to
+`handout.md.bak` and `handout.csv.bak` before being overwritten.
+
+Where a password genuinely cannot be recovered, because the user existed before
+this script ever ran, the row reads
+`(unknown: reset in the UI or delete the user and re-run)`. Both of those work:
+reset the password in the platform UI, or delete the user and let the next run
+create them fresh.
 
 ## The handout
 

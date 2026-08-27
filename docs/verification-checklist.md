@@ -520,15 +520,43 @@ Provisioning. About thirty minutes.
       Flags go **before** the path, see C3.
       **Record:** the working role name.
 
-- [ ] **C6. Re-run `prep.sh` with the same arguments.** **HIGH.**
+- [x] **C6. Re-run `prep.sh` with the same arguments.** **HIGH.**
       Every step should report "already exists" and the script should exit zero.
       Confirm the handout still shows the **original** password for the existing
       users, annotated `existing user`, rather than a new one.
+
+      **2026-08-27: PASS.** Projects and users both reported "already exists",
+      the role was re-asserted, and the new readback confirmed both memberships:
+      `user01 is a member of user01 with 'Project Admin'`. Exit zero.
+      The one-time role validation line now says "checked once", because under
+      `[user01]` it read as though `user02` had been skipped.
 
 - [ ] **C7. The handout is correct and protected.** *MEDIUM.*
       `provisioning/out/handout.md` and `.csv`, mode `600`, with the instance
       URL, project key, username and password per attendee. Confirm
       `provisioning/out/` is gitignored.
+
+      **Attempt 1, 2026-08-27: format and permissions fine, but a real flaw
+      found. Fixed, needs a retest.** After a re-run, **every** password column
+      read `(unchanged, see previous handout)`, so the handout was useless. The
+      no-reset-on-existing-user rule was right, but it was applied without
+      preserving what the previous run had generated. Re-running is supposed to
+      be safe, and a handout you cannot hand out is not safe. Worse, the file is
+      overwritten in place, so a re-run destroyed the only copy of the
+      credentials already distributed.
+
+      Now: passwords are **carried forward** from the previous `handout.csv`, the
+      previous handout is copied to `.bak` before being overwritten, and a
+      genuinely unrecoverable password reads
+      `(unknown: reset in the UI or delete the user and re-run)` instead of a
+      dead end. Placeholders are also comma free now, since one of them
+      contained a comma and would have broken the CSV it is parsed from.
+
+      **On the retest**, both rows should show real `Frog-` passwords carried
+      forward, not placeholders. Note that `user01` and `user02` on this instance
+      pre-date the first successful run, so they may legitimately stay unknown:
+      resetting them in the UI, or deleting both users and re-running, gives a
+      clean baseline for Stage D.
 
 - [ ] **C8. Error paths are readable.** *MEDIUM.* Run once with a deliberately
       bad token and confirm the 401 and 403 messages are clear rather than a
@@ -615,6 +643,16 @@ carries the most design risk. About thirty minutes.
       **Why it matters:** it determines whether labs 02 and 11 are attendee-led
       at all, and it determines what you tell the room about staying inside
       their own project.
+
+      **Narrowed by Stage C, 2026-08-27.** No curation action exists in any of
+      the nine predefined project roles, so this cannot be solved by choosing a
+      different project role. The permission has to come from outside the
+      project.
+      **And it has a known expiry.** Project scoping for Curation is on the
+      JFrog roadmap, expected within one or two months of August 2026. So the
+      answer here is a documented workaround with a shelf life, not a permanent
+      design. `PLAN.md` section 7 records how labs 02 and 11 should be written so
+      that the switch is a small edit when it lands.
 
 - [ ] **D13. A Curation policy can be scoped to one attendee's own
       repositories.** **BLOCKER.**
