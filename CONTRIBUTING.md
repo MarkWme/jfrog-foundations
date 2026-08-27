@@ -99,6 +99,22 @@ docs(glossary): define watch and violation
 - Every command has been syntax-checked. Commands needing a live tenant are
   flagged for verification rather than assumed correct.
 - Shell scripts pass `bash -n`, and `shellcheck` if you have it.
+- **Anything invoking `jf` is tested against the version the devcontainer
+  pins**, not whatever is on your machine. This has already bitten once: `jf
+  api` accepts flags after the endpoint path on 2.121.0 and rejects them on
+  2.120.0 with `Wrong number of arguments`, so `provisioning/prep.sh` shipped
+  broken from a local test that passed. The pinned version is the
+  `JF_CLI_VERSION` arg in `.devcontainer/Dockerfile`, and you can fetch that
+  exact binary without touching your own install:
+
+  ```bash
+  curl -fsSL -o /tmp/jf-pinned \
+    "https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/<VERSION>/jfrog-cli-mac-arm64/jf"
+  chmod +x /tmp/jf-pinned && /tmp/jf-pinned --version
+  ```
+
+  Swap `jfrog-cli-mac-arm64` for `jfrog-cli-linux-amd64` on Linux. Easier still,
+  test in a Codespace, which already has the pinned version.
 - New JFrog terminology is defined on first use and present in
   `docs/glossary.md`.
 - Anything a lab now assumes is recorded in `docs/assumed-knowledge.md`.

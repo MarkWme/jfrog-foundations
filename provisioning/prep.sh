@@ -168,10 +168,21 @@ jf config add "${SERVER_ID}" \
 # This script branches on the status code rather than the exit code, because the
 # distinction matters: 409 means "already exists", which is success here, while
 # 400 on the role step means the role name is wrong.
+# NOTE ON ARGUMENT ORDER: every flag goes BEFORE the endpoint path.
+#
+# That is not stylistic. On JFrog CLI 2.120.0, which is the version this
+# workshop pins in .devcontainer/Dockerfile, putting flags after the path makes
+# the CLI count them as positional arguments and fail with
+#     [Error] Wrong number of arguments (5).
+# On 2.121.0 the same invocation works, which is exactly how this got shipped
+# broken: it was written against a newer CLI than the one the workshop uses.
+# Flags-first is correct on both, verified against both binaries for GET, POST,
+# PUT and DELETE, with and without a body. Do not reorder.
 api() {
     local method="$1" path="$2" body="${3:-}"
-    local -a args=(api "${path}" --method "${method}" --server-id "${SERVER_ID}")
+    local -a args=(api --method "${method}" --server-id "${SERVER_ID}")
     [ -n "${body}" ] && args+=(--header "Content-Type: application/json" --data "${body}")
+    args+=("${path}")
 
     : > "${RESP}"; : > "${ERRF}"
     jf "${args[@]}" >"${RESP}" 2>"${ERRF}" || true
@@ -180,14 +191,29 @@ api() {
     status="$(sed -n 's/.*Http Status: \([0-9][0-9][0-9]\).*/\1/p' "${ERRF}" | tail -n 1)"
 
     if [ -z "${status}" ]; then
-        # No status line means the request never reached the platform at all:
-        # DNS, TLS, or a refused connection. The CLI's own message is the useful
-        # part, so put it where the caller's error handling will print it.
-        cat "${ERRF}" >> "${RESP}"
+        # No status line means the request never completed, so there is nothing
+        # to branch on. Deliberately does NOT claim the host was unreachable:
+        # a CLI usage error looks identical from here, and guessing wrong sends
+        # the reader off debugging their network instead of the command.
+        # Prefer the CLI's own [Error] lines, which carry the real cause.
+        {
+            grep -E '\[Error\]' "${ERRF}" || tail -n 5 "${ERRF}"
+        } > "${RESP}" 2>/dev/null || cat "${ERRF}" > "${RESP}"
         echo "000"
     else
         echo "${status}"
     fi
+}
+
+# Formats whatever came back in $RESP for a human.
+#
+# JFrog returns structured JSON errors, so prefer the message out of those. A
+# non-JSON body means something other than the platform answered, usually
+# because the URL is wrong, and that is frequently a full HTML page: truncate it
+# rather than printing a screenful at someone trying to read a failure.
+err_body() {
+    jq -r '.errors[0].message // .message // .' "${RESP}" 2>/dev/null \
+        || head -c 300 "${RESP}"
 }
 
 # Deliberately excludes characters that are misread when typed from a printed
@@ -224,9 +250,19 @@ case "${code}" in
     200) echo "  Token accepted, and it can list projects." ;;
     401) die "Authentication failed (401). The token is wrong or expired." ;;
     403) die "Authorization failed (403). This token is not a platform admin token." ;;
-    000) die "Could not reach ${JF_URL} at all. The CLI reported:
-$(cat "${RESP}")" ;;
-    *)   die "Unexpected response ${code} from ${JF_URL}/access/api/v1/projects. Body: $(cat "${RESP}")" ;;
+    000) die "No HTTP status came back, so the request did not complete.
+       That is either a connectivity problem or a bad 'jf api' invocation.
+       The JFrog CLI reported:
+
+$(cat "${RESP}")
+
+       CLI version: $(jf --version 2>/dev/null || echo unknown)" ;;
+    404) die "Got 404 from ${JF_URL}/access/api/v1/projects.
+       That path exists on every JFrog Platform instance, so a 404 means the
+       URL is probably not a JFrog instance, or has a path on the end.
+       It should be just the host, for example https://example.jfrog.io" ;;
+    *)   die "Unexpected response ${code} from ${JF_URL}/access/api/v1/projects:
+       $(err_body)" ;;
 esac
 echo ""
 
@@ -274,7 +310,7 @@ for i in $(seq 1 "${COUNT}"); do
     case "${code}" in
         200|201) echo "  project  created"; step_ok=$((step_ok + 1)) ;;
         409)     echo "  project  already exists, left alone"; step_skip=$((step_skip + 1)) ;;
-        *)       echo "  project  FAILED (${code}): $(jq -r '.errors[0].message // .message // .' "${RESP}" 2>/dev/null || cat "${RESP}")"
+        *)       echo "  project  FAILED (${code}): $(err_body)"
                  step_fail=$((step_fail + 1)) ;;
     esac
 
@@ -303,7 +339,7 @@ for i in $(seq 1 "${COUNT}"); do
             password_note="existing user"
             step_skip=$((step_skip + 1))
             ;;
-        *)  echo "  user     FAILED (${code}): $(jq -r '.errors[0].message // .message // .' "${RESP}" 2>/dev/null || cat "${RESP}")"
+        *)  echo "  user     FAILED (${code}): $(err_body)"
             password="(not set, creation failed)"
             password_note="FAILED"
             step_fail=$((step_fail + 1))
@@ -318,13 +354,13 @@ for i in $(seq 1 "${COUNT}"); do
         200|201|204) echo "  role     assigned (${ROLE})"; step_ok=$((step_ok + 1)) ;;
         409)         echo "  role     already assigned"; step_skip=$((step_skip + 1)) ;;
         400)
-            echo "  role     FAILED (400): $(jq -r '.errors[0].message // .message // .' "${RESP}" 2>/dev/null || cat "${RESP}")"
+            echo "  role     FAILED (400): $(err_body)"
             echo "           A 400 here usually means the role name '${ROLE}' is wrong"
             echo "           for this instance. See the VERIFY note at the top of"
             echo "           this script and re-run with --role."
             step_fail=$((step_fail + 1))
             ;;
-        *)  echo "  role     FAILED (${code}): $(jq -r '.errors[0].message // .message // .' "${RESP}" 2>/dev/null || cat "${RESP}")"
+        *)  echo "  role     FAILED (${code}): $(err_body)"
             step_fail=$((step_fail + 1))
             ;;
     esac

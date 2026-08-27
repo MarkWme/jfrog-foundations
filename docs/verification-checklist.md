@@ -417,6 +417,33 @@ Provisioning. About thirty minutes.
       Confirms the token preflight against `GET /access/api/v1/projects` and
       prints the plan without creating anything.
 
+      **Attempt 1, 2026-08-27: FAILED, fixed, needs a retest.** `jf api` rejected
+      the invocation with `Wrong number of arguments (5)` and dumped its own help
+      text, which the script then reported as "could not reach the instance".
+      Two separate defects:
+
+      **Argument order.** `prep.sh` put flags after the endpoint path. On JFrog
+      CLI **2.120.0**, the version this workshop pins, that makes the CLI count
+      the flags as positional arguments and fail. On **2.121.0** the same
+      invocation works. It was written and tested against 2.121.0 on a
+      maintainer machine, so it passed there and shipped broken. Flags now come
+      before the path, verified against **both** binaries for GET, POST, PUT and
+      DELETE, with and without a body.
+
+      **A misleading diagnosis.** The no-status path asserted the host was
+      unreachable, which sent the reader towards a network problem when the real
+      cause was the command. It now says only that no HTTP status came back,
+      names both possibilities, prefers the CLI's own `[Error]` lines, and
+      prints the CLI version.
+
+      Also added a specific 404 case, since `/access/api/v1/projects` exists on
+      every JFrog instance and a 404 there almost always means the URL is not a
+      JFrog instance or has a path on the end, and an `err_body` helper so a
+      non-JSON response is truncated instead of printing a screenful of HTML.
+
+      The process lesson is recorded in `CONTRIBUTING.md`: anything invoking
+      `jf` gets tested against the pinned version, not the local one.
+
 - [ ] **C4. `prep.sh --count 2` creates projects and users.** **HIGH.**
       Confirms `POST /access/api/v1/projects` and `POST /access/api/v2/users`.
 
