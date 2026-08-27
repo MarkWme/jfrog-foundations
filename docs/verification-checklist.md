@@ -69,6 +69,12 @@ cleanly without credentials.
 About thirty minutes. **Do B5 and B6 before B7**, since the app cannot run
 without dependencies.
 
+**Stage B is complete as of 2026-08-27, with one optional item outstanding.**
+B1 to B10 and B12 to B15 pass. B11 is inconclusive rather than failed, and is
+not worth blocking on. Two bugs were found and fixed along the way, both in
+`verify.sh`, and one wrong instruction was found and replaced with a script, in
+B5.
+
 - [x] **B1. Create a Codespace on a fresh personal fork, and time it.**
       **HIGH.** Target is under five minutes cold on 2-core, with no prebuild.
       Measure the **attendee's** path, on a fork, not the maintainer's.
@@ -108,7 +114,7 @@ without dependencies.
 - [x] **B2. The welcome banner appears**, naming lab 00. *MEDIUM.*
       **Result: pass.**
 
-- [ ] **B3. `scripts/verify.sh` reports every tool present.**
+- [x] **B3. `scripts/verify.sh` reports every tool present.**
       **HIGH.** Expect **Node 22** with no version warning, `jf` 2.120.0 with no
       pin drift warning, plus npm, Docker, gh, jq and git.
       The devcontainer moved from Node 20 to Node 22 on 2026-08-27, because Node
@@ -123,7 +129,7 @@ without dependencies.
       npm 10.9.2, Docker 29.7.2, gh 2.98.0, jq 1.6, git 2.49.0, and the Docker
       daemon reported reachable rather than warning, so no re-run was needed.
 
-- [ ] **B4. `verify.sh` exits zero with no JFrog server configured.**
+- [x] **B4. `verify.sh` exits zero with no JFrog server configured.**
       **HIGH.** The "JFrog connection" section should read "no server named
       workshop configured yet" as information, not failure.
       ```bash
@@ -184,7 +190,7 @@ without dependencies.
       `[ ok ] connection` and a real ping result. Both are now covered by
       regression tests run against an empty and a populated config directory.
 
-- [ ] **B5. Generate the sample application lock file.**
+- [x] **B5. Generate the sample application lock file.**
       **BLOCKER.** In a Codespace:
       ```bash
       bash scripts/regenerate-lockfile.sh
@@ -203,7 +209,19 @@ without dependencies.
       regenerated tree drifts between deliveries and would silently decay the
       remediation sequence the labs depend on.
 
-- [ ] **B6. Confirm the transitive Critical actually landed.**
+      **Attempt 2, 2026-08-27 using the script: PASS.** 81 packages resolved in
+      8 seconds, every registry host `registry.npmjs.org`, `mkdirp@0.5.5` and
+      `minimist@1.2.5` both confirmed by the script's own checks. Committed.
+      Independently re-verified against the committed file: 82 entries, all
+      eight direct pins exact, no non-public host, no tenant hostname anywhere
+      in the tree.
+      Worth noting that npm printed its own deprecation warnings for `tar@4.4.8`
+      and `axios@0.21.0` during the install. That is expected and is a preview
+      of what the labs teach: npm knows these are bad and says so in passing,
+      while the workshop uses `jf audit` to say what is actually wrong and what
+      to do about it.
+
+- [x] **B6. Confirm the transitive Critical actually landed.**
       **BLOCKER**, and the single most consequential item in this file.
       ```bash
       npm ls minimist mkdirp
@@ -212,7 +230,18 @@ without dependencies.
 
       **Attempt 1, 2026-08-27: FAILED.** Got `mkdirp@0.5.6` and
       `minimist@1.2.8`, which is patched, so lab 07 had no subject. Cause was
-      B5, not this check. Retest after regenerating with the script.
+      B5, not this check.
+
+      **Attempt 2, 2026-08-27 after regenerating with the script: PASS.**
+      ```
+      tar@4.4.8
+      └─┬ mkdirp@0.5.5
+        └── minimist@1.2.5
+      ```
+      **Lab 07's central exercise now has its subject**: a Critical two hops
+      down, reachable only by tracing, and not fixable by editing the line that
+      caused it. The image was rebuilt afterwards so it carries this tree, which
+      E2 depends on.
 
       **If it fails again after using the script**, `--before` is not doing what
       the design assumes, and this stops being a documentation problem. Stop and
@@ -292,6 +321,9 @@ without dependencies.
       ```
       Low stakes either way: the call is wrapped in try/catch, so the worst case
       is a probe that reports unreachable instead of a status code.
+      **Status: the only Stage B item still open, and it does not block Stage C
+      or anything after it.** Pick it up whenever, or leave it and let lab 07's
+      CI run exercise the code path against a real upstream instead.
 
 - [x] **B12. Build the container image, and time it.**
       **HIGH.** Must be under two minutes in a Codespace.
@@ -301,7 +333,7 @@ without dependencies.
       **Result 2026-08-27: pass, 22 seconds.** Comfortably inside the two minute
       target, with plenty of headroom for the base image to grow.
 
-- [ ] **B13. Run the image.** **HIGH.**
+- [x] **B13. Run the image.** **HIGH.**
       ```bash
       docker run --rm -p 3000:3000 node-dashboard:dev
       ```
@@ -330,11 +362,16 @@ without dependencies.
       difference is the whole point of the two-stage build, and it is worth
       seeing once.
 
+      **Result 2026-08-27: pass.** `node --version` in the container reports
+      **v16.20.2**, exactly the pinned runtime base, against v22.16.0 in the
+      Codespace. So the two-stage split works and `node_modules` resolved by
+      npm 10 runs correctly on Node 16.
+
 - [x] **B14. Port 3000 forwards.** *MEDIUM.*
       **Result 2026-08-27: pass.** Appears in the Ports panel, app and API both
       reachable in the browser.
 
-- [ ] **B15. Rebuild the container and confirm the lock file survives.**
+- [x] **B15. Rebuild the container and confirm the lock file survives.**
       **HIGH.** Do this **after** the lock file from B5 is committed, otherwise
       there is nothing to preserve and the test is meaningless.
 
@@ -353,6 +390,10 @@ without dependencies.
       wrong lock file. With a lock file present it must take the `npm ci` path
       instead and leave the file alone. B5's failure is what this guard is
       protecting against, so it is worth confirming it works.
+
+      **Result 2026-08-27: pass.** Container rebuilt, reconnected, and
+      `git status` printed nothing. The guard holds: a rebuild takes the
+      `npm ci` path and leaves the committed lock file untouched.
 
 ---
 
