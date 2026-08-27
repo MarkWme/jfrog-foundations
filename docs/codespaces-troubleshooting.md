@@ -65,6 +65,28 @@ this reason.
 
 ## The Codespace opens but the environment looks wrong
 
+### The Codespace opened in "recovery mode"
+
+Recovery mode means container creation failed and Codespaces started a plain
+fallback container instead, so it could give you a terminal to fix things with.
+The tell is that none of the workshop tools are present and the environment
+bears no resemblance to what lab 00 describes.
+
+This is **not** something an attendee can fix, and it is not their mistake. It
+means the devcontainer definition in the repository is broken for this
+environment. Tell your instructor.
+
+To see the actual cause: command palette, then
+`Codespaces: View Creation Log`. Read for the **last** error before
+`Creating recovery container`, not the first warning. The image can build
+perfectly and the container still fail to start afterwards, so a log full of
+successful build steps does not mean the build was the problem.
+
+One failure of this shape has already been found and fixed during development:
+a `remoteUser` in `devcontainer.json` naming a user that does not exist in the
+base image, which produces
+`unable to find user <name>: no matching entries in passwd file`.
+
 ### The welcome banner never appeared
 
 The banner is printed by `.devcontainer/postCreate.sh`. If you did not see it,

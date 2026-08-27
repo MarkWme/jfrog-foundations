@@ -50,7 +50,13 @@
   "updateContentCommand": "bash .devcontainer/updateContent.sh",
   "postCreateCommand": "bash .devcontainer/postCreate.sh",
 
-  "remoteUser": "vscode",
+  // "node", not "vscode". The javascript-node image inherits its non-root user
+  // from the official node image and does not contain a "vscode" user, so
+  // remoteUser: vscode fails container creation with
+  // "unable to find user vscode: no matching entries in passwd file".
+  // Confirmed against the image's own upstream definition in
+  // github.com/devcontainers/images/src/javascript-node.
+  "remoteUser": "node",
 
   "hostRequirements": {
     "cpus": 2,

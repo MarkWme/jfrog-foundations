@@ -74,6 +74,36 @@ without dependencies.
       Measure the **attendee's** path, on a fork, not the maintainer's.
       **Record:** the cold time.
 
+      **Attempt 1, 2026-08-27: FAILED, cause found and fixed, needs a retest.**
+      The image built correctly and quickly. Every layer succeeded: `jq`, `tree`,
+      `jf version 2.120.0`, docker-in-docker and the GitHub CLI all installed,
+      and the image exported. Container **creation** then failed:
+
+      ```
+      unable to find user vscode: no matching entries in passwd file
+      ```
+
+      `devcontainer.json` set `"remoteUser": "vscode"`, but the
+      `javascript-node` image inherits its non-root user from the official
+      `node` image and contains **`node`**, not `vscode`. Codespaces fell back
+      to a recovery container on `devcontainers/base:alpine`, which is why the
+      environment looked wrong rather than absent.
+
+      Fixed by setting `"remoteUser": "node"`, confirmed against the image's own
+      upstream definition in `devcontainers/images/src/javascript-node`, which
+      uses exactly that.
+
+      **Timings from the failed run, which are still useful:** 3 min 10 s total,
+      of which the image build was about 114 s, on a cold cache with no
+      prebuild. Comfortably inside the five minute target, and the parts that
+      dominate (base image pull, features) are exactly what a prebuild removes.
+
+      **On the retest, also confirm:** the workspace is writable as `node`, and
+      `docker info` works as `node` rather than only as root, since the
+      docker-in-docker feature adds the remote user to the `docker` group and
+      that group membership was previously computed for a user that did not
+      exist.
+
 - [ ] **B2. The welcome banner appears**, naming lab 00. *MEDIUM.*
 
 - [ ] **B3. `scripts/verify.sh` reports every tool present.**
