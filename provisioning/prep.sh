@@ -216,6 +216,66 @@ err_body() {
         || head -c 300 "${RESP}"
 }
 
+# ------------------------------------------------------- trust nothing
+
+# Both helpers below exist because the role assignment call turned out to
+# return success while assigning nothing: prep.sh reported
+# "role assigned (Project Admin)" and the project had no members. A 2xx from
+# that endpoint is evidence the request was well formed, not evidence it did
+# what you wanted. So the role name is checked against the platform's own list
+# before use, and the membership is read back afterwards.
+
+# Confirms ROLE is a real role on this project, once, on the first project seen.
+# https://docs.jfrog.com/projects/reference/getProjectRoles
+ROLE_CHECKED=0
+validate_role() {
+    local key="$1" code
+    [ "${ROLE_CHECKED}" -eq 1 ] && return 0
+    ROLE_CHECKED=1
+
+    code="$(api GET "/access/api/v1/projects/${key}/roles")"
+    if [ "${code}" != "200" ]; then
+        echo "  roles    WARNING: could not list roles (${code}), '${ROLE}' is unverified"
+        return 0
+    fi
+
+    # Matched against the raw body rather than a known JSON shape, because the
+    # response shape is not documented in the reference and a wrong jq path
+    # would silently look like a missing role.
+    if grep -qF "\"${ROLE}\"" "${RESP}"; then
+        echo "  roles    '${ROLE}' exists on this instance"
+        return 0
+    fi
+
+    echo ""
+    echo "  The role '${ROLE}' does not exist on this instance."
+    echo "  Roles this project actually has:"
+    jq -r '.. | .name? // empty' "${RESP}" 2>/dev/null | sort -u | sed 's/^/      /' \
+        || head -c 400 "${RESP}"
+    die "Re-run with --role set to one of the names listed above."
+}
+
+# Reads the membership back and confirms both the user and the role are present.
+# https://docs.jfrog.com/projects/reference/getprojectusers
+verify_membership() {
+    local key="$1" username="$2" code
+    code="$(api GET "/access/api/v1/projects/${key}/users")"
+    if [ "${code}" != "200" ]; then
+        echo "  verify   WARNING: could not read members back (${code})"
+        return 1
+    fi
+    if ! grep -qF "\"${username}\"" "${RESP}"; then
+        echo "  verify   FAILED: ${username} is not a member of ${key}"
+        return 1
+    fi
+    if ! grep -qF "\"${ROLE}\"" "${RESP}"; then
+        echo "  verify   FAILED: ${username} is a member but does not hold '${ROLE}'"
+        return 1
+    fi
+    echo "  verify   ${username} is a member of ${key} with '${ROLE}'"
+    return 0
+}
+
 # Deliberately excludes characters that are misread when typed from a printed
 # handout: i, l, o, 0, 1.
 gen_password() {
@@ -346,6 +406,9 @@ for i in $(seq 1 "${COUNT}"); do
             ;;
     esac
 
+    # Validate the role name before trying to use it. Runs once.
+    validate_role "${key}"
+
     # 3. Membership.
     # https://docs.jfrog.com/projects/reference/addorupdateprojectuser
     role_body="$(jq -n --arg role "${ROLE}" '{ roles: [ $role ] }')"
@@ -364,6 +427,12 @@ for i in $(seq 1 "${COUNT}"); do
             step_fail=$((step_fail + 1))
             ;;
     esac
+
+    # 4. Read it back. The three steps above only prove the platform accepted
+    #    three requests.
+    if ! verify_membership "${key}" "${username}"; then
+        step_fail=$((step_fail + 1))
+    fi
 
     rows+=("${key}|${key}|${username}|${password}|${password_note}")
 done
