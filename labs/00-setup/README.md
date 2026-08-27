@@ -145,7 +145,7 @@ Underneath it, a health check runs automatically and lists your tools:
 ```
 Tools
 ------------------------------------------------------------
-  [ ok ] Node.js          v20.19.0
+  [ ok ] Node.js          v22.11.0
   [ ok ] npm              10.8.2
   [ ok ] JFrog CLI        jf version 2.120.0
   [ ok ] Docker           Docker version 27.3.1

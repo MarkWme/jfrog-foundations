@@ -60,14 +60,14 @@ require gh     "GitHub CLI" gh --version
 require jq     "jq"         jq --version
 require git    "Git"        git --version
 
-# Node major version. The workshop targets Node 20 LTS. A different major is
+# Node major version. The workshop targets Node 22 LTS. A different major is
 # not necessarily fatal, but it is worth surfacing before it causes a confusing
 # failure in a later lab.
 if command -v node >/dev/null 2>&1; then
     node_major="$(node --version | sed -E 's/^v([0-9]+).*/\1/')"
-    if [ "${node_major}" != "20" ]; then
-        printf '%s %-16s expected Node 20 LTS, found major version %s\n' \
-            "${WARN}" "Node version" "${node_major}"
+    if [ "${node_major}" != "${WORKSHOP_NODE_MAJOR:-22}" ]; then
+        printf '%s %-16s expected Node %s LTS, found major version %s\n' \
+            "${WARN}" "Node version" "${WORKSHOP_NODE_MAJOR:-22}" "${node_major}"
         warnings=$((warnings + 1))
     fi
 fi

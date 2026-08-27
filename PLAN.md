@@ -311,7 +311,7 @@ longer matters.
 
 `apps/node-dashboard/Dockerfile`, multi-stage, plus `.dockerignore`.
 
-- Build stage: `node:20-bookworm-slim`, installs dependencies. In lab 07 this
+- Build stage: `node:22-bookworm-slim`, installs dependencies. In lab 07 this
   stage resolves through Artifactory; before then it resolves from public npm.
 - Runtime stage: **`node:16.20.2-bullseye-slim`**, pinned by patch. Copies
   `node_modules` and source, no toolchain, no npm cache.
@@ -334,7 +334,7 @@ would rather start inside that budget and add findings than start outside it.
 
 ## 5. Devcontainer and Codespaces
 
-Node 20 LTS, docker-in-docker, GitHub CLI, pinned JFrog CLI, and a structure
+Node 22 LTS, docker-in-docker, GitHub CLI, pinned JFrog CLI, and a structure
 built around prebuilds.
 
 ```
@@ -344,7 +344,7 @@ built around prebuilds.
   postCreate.sh     Banner, verify.sh, and a guard for the unprebuilt path
 ```
 
-- Base: `mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm`.
+- Base: `mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm`.
 - Features: `docker-in-docker`, `github-cli`.
 - **JFrog CLI is installed in the Dockerfile from a version-pinned release
   URL**, `https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/<VERSION>/jfrog-cli-linux-amd64/jf`,
@@ -531,6 +531,7 @@ Each of these is a place I am proposing to do something other than what
 | D5 | `00-setup` has no closing challenge | Section 8.4 makes it fully guided, which conflicts with section 8.1's every-guided-lab rule. Approved. |
 | D6 | `10-xray-ui` gets a short guided orientation | Section 8.4 weights Part 4 to challenge. Locating scan results is navigation, not reasoning. Section 6. |
 | D7 | `docs/assumed-knowledge.md` and `docs/codespaces-troubleshooting.md` added to the tree | Required by sections 8 and 5, absent from the section 4 listing. |
+| D9 | Devcontainer uses Node 22 LTS, not the Node 20 LTS named in section 5 | Node 20 reached end of life in April 2026 and is no longer a maintained variant of the base image, so it receives no security patches. An unpatched base undermines the credibility of a supply chain security workshop. Approved 2026-08-27. |
 | D8 | Xray policy fails on Critical only | Makes the lab 07 green build reachable and makes findings-versus-violations true of the app, not only the base image. Section 3. |
 
 ---

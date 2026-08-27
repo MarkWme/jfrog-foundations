@@ -107,8 +107,12 @@ without dependencies.
 - [ ] **B2. The welcome banner appears**, naming lab 00. *MEDIUM.*
 
 - [ ] **B3. `scripts/verify.sh` reports every tool present.**
-      **HIGH.** Expect Node 20 with no version warning, `jf` 2.120.0 with no pin
-      drift warning, plus npm, Docker, gh, jq and git.
+      **HIGH.** Expect **Node 22** with no version warning, `jf` 2.120.0 with no
+      pin drift warning, plus npm, Docker, gh, jq and git.
+      The devcontainer moved from Node 20 to Node 22 on 2026-08-27, because Node
+      20 is end of life and no longer a maintained variant of the base image.
+      A Node version warning here means the base image tag and the check in
+      `verify.sh` have drifted apart.
       **Watch for:** the Docker daemon check. A warning here immediately after
       start is normal and it should clear on a re-run.
 
@@ -164,8 +168,15 @@ without dependencies.
       curl -s localhost:3000/api/diagnostics | tar -tzf - | head
       ```
       **Why:** `tar@4.4.8` is old enough that its `fs` usage may warn or fail on
-      Node 20. If it breaks, `tar` needs replacing with a different old-and-
-      vulnerable carrier for the `minimist` chain, which loops back to B6.
+      a modern Node. The devcontainer now runs **Node 22**, two majors further
+      from `tar` 4's era than the Node 20 this was originally written against,
+      so treat this as slightly more likely to fail than before.
+      If it breaks, `tar` needs replacing with a different old-and-vulnerable
+      carrier for the `minimist` chain, which loops back to B6. **Tell me rather
+      than swapping it yourself**: the replacement has to satisfy three things
+      at once, namely a real CVE of its own, a transitive dependency that is
+      still vulnerable when resolved at the 2020 cutoff, and a plausible use in
+      the application.
 
 - [ ] **B10. The token round trip works.** *MEDIUM.*
       ```bash

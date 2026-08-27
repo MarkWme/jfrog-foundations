@@ -4,6 +4,15 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
+      // Node 22 LTS. Node 20 reached end of life in April 2026 and is no longer
+      // among the maintained variants of this image, so it stops receiving
+      // security patches. Shipping attendees an unpatched base is a poor look
+      // for a supply chain security workshop. This deviates from SPEC.md
+      // section 5, which predates Node 20's EOL. See PLAN.md divergence D9.
+      //
+      // Note this is the DEVCONTAINER base. The deliberately old base image is
+      // in apps/node-dashboard/Dockerfile and is teaching material.
+      "NODE_VARIANT": "1-22-bookworm",
       "JF_CLI_VERSION": "2.120.0"
     }
   },

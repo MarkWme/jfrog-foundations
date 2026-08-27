@@ -4,7 +4,7 @@
 # because GitHub Codespaces prebuilds bake the image but run postCreate per
 # Codespace. See docs/repo-setup.md.
 
-ARG NODE_VARIANT=1-20-bookworm
+ARG NODE_VARIANT=1-22-bookworm
 FROM mcr.microsoft.com/devcontainers/javascript-node:${NODE_VARIANT}
 
 # Pinned deliberately. Do not switch this to "curl | sh" against latest: a

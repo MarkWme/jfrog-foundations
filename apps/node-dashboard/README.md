@@ -178,7 +178,7 @@ mattering.
 `Dockerfile` is a two-stage build, and the split carries teaching material in
 both directions.
 
-**Build stage: `node:20-bookworm-slim`.** Current, and resolves dependencies
+**Build stage: `node:22-bookworm-slim`.** Current, and resolves dependencies
 from the committed lock file. In lab 07 this resolution moves to Artifactory.
 
 **Runtime stage: `node:16.20.2-bullseye-slim`.** Pinned to an exact patch, and
