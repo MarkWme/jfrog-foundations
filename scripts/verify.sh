@@ -201,24 +201,33 @@ else
         warnings=$((warnings + 1))
     fi
 
-    # Project visibility. Reported for information only: a project you cannot
-    # see yet is a permissions question for your instructor, not a broken
-    # container.
+    # Confirms the project key in .env actually names a project this attendee
+    # can reach.
     #
-    # VERIFY: confirm against a live tenant that this endpoint returns 200 with
-    # an empty array for a project that exists but has no repositories, and a
-    # non-200 for a project key that does not exist. If it returns 200 either
-    # way, this check proves nothing and should be replaced by the UI
-    # confirmation step in lab 00.
-    # https://docs.jfrog.com/artifactory/reference/get-repositories
+    # This previously called "jf rt curl /api/repositories?project=<key>", which
+    # returns 200 for ANY value including nonsense. Verified against a live
+    # instance on 2026-08-27: a deliberately bogus key still reported "[ ok ]".
+    # So the check could not fail, which is worse than having no check at all:
+    # it gave false confidence at the exact moment an attendee was trying to
+    # confirm their setup. Third bug of this shape in this repository.
+    #
+    # The Access project endpoint does discriminate, returning 200 for a project
+    # you can see and non-2xx otherwise, and "jf api" exits non-zero on any
+    # non-2xx. Note flags precede the path: required on CLI 2.120.0.
+    # https://docs.jfrog.com/projects/reference/getProject
     if [ -n "${JF_PROJECT:-}" ]; then
-        if run_bounded 20 jf rt curl -s -XGET "/api/repositories?project=${JF_PROJECT}" \
-            --server-id "${server_id}" >/dev/null 2>&1; then
-            printf '%s %-16s project "%s" queried successfully\n' \
+        if run_bounded 20 jf api --method GET --server-id "${server_id}" \
+            "/access/api/v1/projects/${JF_PROJECT}" >/dev/null 2>&1; then
+            printf '%s %-16s project "%s" exists and is visible to you\n' \
                 "${PASS}" "project access" "${JF_PROJECT}"
         else
-            printf '%s %-16s could not query project "%s"\n' \
-                "${INFO}" "project access" "${JF_PROJECT}"
+            printf '%s %-16s cannot see a project called "%s"\n' \
+                "${WARN}" "project access" "${JF_PROJECT}"
+            echo "         Check the project key on your handout against .env:"
+            echo "             grep JF_PROJECT .env"
+            echo "         If the key is right, this is a permissions question"
+            echo "         for your instructor rather than something to fix here."
+            warnings=$((warnings + 1))
         fi
     fi
 fi

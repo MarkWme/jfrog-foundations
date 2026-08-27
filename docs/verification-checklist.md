@@ -668,18 +668,24 @@ carries the most design risk. About thirty minutes.
       moment an attendee is trying to confirm their setup. Replace it with the
       UI confirmation from lab 00 step 6.
 
-      **2026-08-27: HALF DONE, and the outstanding half is the one that matters.**
-      The real project key returns
-      `[ ok ] project access   project "user01" queried successfully`, so the
-      happy path works. **The bogus key was not tried**, so whether this check
-      can ever fail is still unknown. That is precisely the shape of two bugs
-      already shipped in this repository, so it is worth closing:
-      ```bash
-      sed -i 's/^JF_PROJECT=.*/JF_PROJECT=definitely-not-a-real-project/' .env
-      bash scripts/verify.sh | grep 'project access'
-      sed -i 's/^JF_PROJECT=.*/JF_PROJECT=user01/' .env
-      ```
-      **Want:** anything other than `[ ok ]` on the bogus key.
+      **2026-08-27: FAILED as predicted, now fixed, needs a retest.** A
+      deliberately bogus project key returned
+      `[ ok ] project access   project "definitely-not-a-real-project" queried
+      successfully`. The check could not fail. `GET /api/repositories?project=X`
+      accepts any value, so it was answering a question nobody asked.
+
+      **Third bug of this exact shape in this repository**, after the `jf config
+      show` exit code and the `pipefail` plus `grep -q` pipeline. All three
+      passed their original test while being incapable of failing.
+
+      Replaced with `GET /access/api/v1/projects/{key}`, which returns 200 for a
+      project you can see and non-2xx otherwise. Tested against a local fake
+      platform in both directions: `[ ok ]` for `user01`, `[warn]` with
+      actionable guidance for a bogus key. A failure is now a warning rather
+      than an informational line, because it now means something.
+
+      **On the retest, do both directions again**, since the fix is only
+      verified against a fake platform, not a real one.
 
 - [x] **D8. `setup.sh` re-runs cleanly** over an existing configuration.
       *MEDIUM.* It removes and re-adds rather than editing, so this should be
@@ -719,10 +725,34 @@ carries the most design risk. About thirty minutes.
       at all, and it determines what you tell the room about staying inside
       their own project.
 
+      **2026-08-27: ANSWERED. `policy_manager` on the user.**
+
+      Curation defines three roles: **Platform Admin**, **Manage Policies** and
+      **Read Policies**. Attendees need Manage Policies, which is granted as
+      `policy_manager: true` in the body of `POST /access/api/v2/users`. That is
+      the endpoint `provisioning/prep.sh` already uses, so it is one field, not a
+      new mechanism.
+      https://docs.jfrog.com/security/docs/set-user-roles-and-permissions
+
+      **The important part is what this avoids.** The fallback recorded in
+      `PLAN.md` was to make every attendee a platform administrator. Manage
+      Policies is far narrower: attendees can manage policies and cannot delete
+      each other's projects or users. R1's risk is largely retired.
+
+      Two caveats, both handled. It requires **Artifactory 7.128.0 or later**,
+      and an older instance ignores the field silently rather than rejecting it,
+      so `prep.sh` reads the flag back and says what to do if it is absent. And a
+      **pre-existing user never receives the field**, because the script does not
+      modify existing accounts, so the readback catches those too and points at
+      the UI path.
+
+      **Still to confirm on a live instance:** that `policy_manager: true` is
+      accepted, is visible on readback, and actually lets a non-admin attendee
+      create a Curation policy. That last one is the real test.
+
       **Narrowed by Stage C, 2026-08-27.** No curation action exists in any of
-      the nine predefined project roles, so this cannot be solved by choosing a
-      different project role. The permission has to come from outside the
-      project.
+      the nine predefined project roles, so this could never have been solved by
+      choosing a different project role.
       **And it has a known expiry.** Project scoping for Curation is on the
       JFrog roadmap, expected within one or two months of August 2026. So the
       answer here is a documented workaround with a shelf life, not a permanent

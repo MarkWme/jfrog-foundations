@@ -4,7 +4,8 @@
 #
 # Run this once against a fresh trial instance before a delivery. It creates
 # one JFrog Project per attendee, one user per attendee, assigns each user to
-# their project, and writes a handout you can distribute in the room.
+# their project and the platform "Manage policies" role that Curation needs,
+# then writes a handout you can distribute in the room.
 #
 # It creates NOTHING ELSE, on purpose. Repositories, Curation policies, Xray
 # policies, watches, builds and access tokens are all workshop content and are
@@ -40,11 +41,13 @@ DRY_RUN=0
 # repositories, policies, watches and builds inside their own project, so this
 # has to be the project-administrator role rather than Developer.
 #
-# VERIFY: confirm the exact role name against a live tenant. The JFrog REST API
-# reference documents the roles field as an array of strings without listing the
-# built-in names, so this string is a best guess taken from the platform UI.
-# If provisioning fails on the role assignment step with a 400, list the
-# available roles for a project and set --role accordingly.
+# Confirmed against a live instance on 2026-08-27: "Project Admin" exists, is
+# type ADMIN, and carries the actions the labs need, including CREATE_LOCAL_REPO,
+# CREATE_REMOTE_REPO, CREATE_VIRTUAL_REPO, POLICIES_SECURITY and
+# WATCHES_SECURITY. Notably it carries no curation action, which is why the
+# Curation permission is granted separately on the user, see policy_manager
+# below. validate_role() checks this name against the instance before use, so a
+# wrong name fails with the real list rather than silently assigning nothing.
 # https://docs.jfrog.com/projects/reference/addorupdateprojectuser
 ROLE="Project Admin"
 
@@ -52,8 +55,9 @@ usage() {
     cat <<'EOF'
 JFrog Foundations: instructor prep script.
 
-Creates one JFrog Project per attendee, one user per attendee, and assigns
-each user to their project. Then writes a handout to distribute in the room.
+Creates one JFrog Project per attendee, one user per attendee, and assigns each
+user to their project plus the platform "Manage policies" role that Curation
+needs. Then writes a handout to distribute in the room.
 
 It creates NOTHING ELSE, on purpose. Repositories, Curation policies, Xray
 policies, watches, builds and access tokens are all workshop content, created
@@ -255,6 +259,34 @@ validate_role() {
     die "Re-run with --role set to one of the names listed above."
 }
 
+# Confirms the user actually holds the Curation permission.
+#
+# Read back rather than assumed for two reasons. On Artifactory older than
+# 7.128.0 the policy_manager field is ignored silently instead of being
+# rejected, so creation succeeds and the permission is absent. And a user that
+# already existed was never sent the field at all, because this script does not
+# modify existing accounts.
+# https://docs.jfrog.com/administration/reference/getUserDetails
+verify_curation_permission() {
+    local username="$1" code
+    code="$(api GET "/access/api/v2/users/${username}")"
+    if [ "${code}" != "200" ]; then
+        echo "  curation WARNING: could not read ${username} back (${code})"
+        return 1
+    fi
+    if grep -qE '"policy_manager"[[:space:]]*:[[:space:]]*true' "${RESP}"; then
+        echo "  curation ${username} holds 'Manage policies'"
+        return 0
+    fi
+    echo "  curation MISSING: ${username} does not hold 'Manage policies'"
+    echo "           Labs 02 and 11 need it. Either delete this user and re-run,"
+    echo "           or assign it in the UI under Administration, Identity and"
+    echo "           Access, Users, ${username}, Roles, Assign Roles,"
+    echo "           'Manage policies'. If the instance predates Artifactory"
+    echo "           7.128.0 the API field is ignored and the UI is the only route."
+    return 1
+}
+
 # Reads the membership back and confirms both the user and the role are present.
 # https://docs.jfrog.com/projects/reference/getprojectusers
 verify_membership() {
@@ -393,6 +425,19 @@ for i in $(seq 1 "${COUNT}"); do
 
     # 2. User.
     # https://docs.jfrog.com/administration/reference/createuser
+    # policy_manager grants the platform's "Manage policies" role, which is what
+    # JFrog Curation requires to create, edit and delete Curation policies.
+    #
+    # This is the answer to the Curation permission question, and it matters that
+    # it is NOT admin. Curation has three roles: Platform Admin, Manage Policies
+    # and Read Policies. Curation has no project scoping, so the permission has
+    # to be granted outside the project, and the obvious fallback was to make
+    # every attendee a platform administrator. This is far narrower: attendees
+    # can manage policies, and cannot delete each other's projects or users.
+    # https://docs.jfrog.com/security/docs/set-user-roles-and-permissions
+    #
+    # Requires Artifactory 7.128.0 or later. On an older instance the field is
+    # ignored silently rather than rejected, which is why it is read back below.
     user_body="$(jq -n \
         --arg username "${username}" \
         --arg email "${email}" \
@@ -402,6 +447,7 @@ for i in $(seq 1 "${COUNT}"); do
             email: $email,
             password: $password,
             admin: false,
+            policy_manager: true,
             profile_updatable: true,
             disable_ui_access: false,
             internal_password_disabled: false
@@ -461,6 +507,10 @@ for i in $(seq 1 "${COUNT}"); do
     # 4. Read it back. The three steps above only prove the platform accepted
     #    three requests.
     if ! verify_membership "${key}" "${username}"; then
+        step_fail=$((step_fail + 1))
+    fi
+
+    if ! verify_curation_permission "${username}"; then
         step_fail=$((step_fail + 1))
     fi
 

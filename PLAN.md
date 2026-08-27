@@ -603,10 +603,25 @@ the record, so a later session does not reopen them.
 Four consequences that need carrying into later phases rather than
 rediscovering.
 
-**R1. Platform admin weakens the isolation story (from Q3).** If attendees hold
-platform administrator, Projects organize their work but no longer *enforce*
-the boundary. An attendee can wander into, or delete, another attendee's
-project. Consequences: lab 00 gets a `> [!IMPORTANT]` callout naming the
+**R1. Curation needs a permission outside the project (from Q3).**
+
+**Resolved during Stage D verification, and better than expected.** Curation
+defines three roles: Platform Admin, **Manage Policies** and Read Policies.
+Attendees get **Manage Policies**, granted as `policy_manager: true` on the user
+at creation time through `POST /access/api/v2/users`, which `provisioning/prep.sh`
+already calls. Requires Artifactory 7.128.0 or later, and `prep.sh` reads the
+flag back afterwards because an older instance ignores it silently.
+
+So **platform administrator is not needed**, which removes most of the risk this
+entry was originally about: attendees cannot delete each other's projects or
+users. What remains is narrower and unavoidable while Curation has no project
+scoping: every attendee can see, and edit, every attendee's Curation policies.
+That is what the naming prefix and repository scoping discipline in section 7 is
+for, and it has the expiry date recorded there.
+
+The original concern, retained because it still shapes the labs: if attendees
+held platform administrator, Projects would organize their work but no longer
+*enforce* the boundary. Consequences: lab 00 gets a `> [!IMPORTANT]` callout naming the
 attendee's own project key and saying to stay inside it;
 `docs/instructor-guide.md` gets a note that the permission level is
 deliberately generous and why; and no lab step is written in a way that reads
