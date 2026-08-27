@@ -746,9 +746,53 @@ carries the most design risk. About thirty minutes.
       modify existing accounts, so the readback catches those too and points at
       the UI path.
 
-      **Still to confirm on a live instance:** that `policy_manager: true` is
-      accepted, is visible on readback, and actually lets a non-admin attendee
-      create a Curation policy. That last one is the real test.
+      **2026-08-27, first live attempt: inconclusive, and two things came out of
+      it.**
+
+      **1. Curation still does not appear on any menu.** That does not by itself
+      mean the permission failed: the UI may simply not expose Curation to a
+      non-admin, and platform features that work through the API before the UI
+      catches up are common. The two possibilities have to be separated, and the
+      Curation policies API does it. Note it lives under **Xray**, not under a
+      `/curation/` path:
+      ```bash
+      jf api --method GET --server-id workshop /xray/api/v1/curation/policies
+      ```
+      Run that **as the attendee**, not as admin.
+      - **200** means the permission works and only the UI is missing. Labs 02
+        and 11 then have to be written around the API and the CLI rather than
+        click paths, which is a real change but a workable one.
+      - **403** means `policy_manager` is not sufficient, and the next candidate
+        is platform admin, with all the cost recorded in R1.
+      https://jfrog.com/help/r/jfrog-rest-apis/list-curation-policies
+
+      Also worth capturing: what the `curation` line from `prep.sh` said for each
+      attendee. It reads the `policy_manager` flag back from
+      `GET /access/api/v2/users/{name}`, so it distinguishes "the flag was never
+      set" from "the flag is set but grants nothing".
+
+      **2. `policy_manager` widened project visibility, and that is a
+      regression.** An attendee can now see **every** project rather than only
+      their own, read-only in the others. Before the change they saw exactly two
+      entries in the selector, All Projects and their own.
+
+      This directly contradicts lab 00 step 6, which was rewritten earlier the
+      same day, from D4, to say an attendee sees only their own project and to
+      present that as the isolation story working. **That text is now wrong.**
+      It has deliberately not been changed yet, because if `policy_manager` is
+      dropped the original wording becomes correct again. The lab follows the
+      decision, not the reverse.
+
+      **The options, once the API test says which way this goes:**
+
+      | | Approach | Cost |
+      | --- | --- | --- |
+      | A | Keep `policy_manager`, accept read-only visibility of other projects | Lab 00 step 6 needs rewording. Honest and simple: you can see others exist, you cannot touch them |
+      | B | Drop it, make labs 02 and 11 instructor-demonstrated | Clean isolation, but attendees lose hands-on Curation, which is a headline of the workshop |
+      | C | Grant it only before lab 02, via a `prep.sh` flag the instructor runs mid-day | Clean isolation for labs 00 and 01, extra moving part on the day |
+
+      A is the likely answer if the API test returns 200, since read-only
+      visibility of a neighbour's project is a small price. Not deciding yet.
 
       **Narrowed by Stage C, 2026-08-27.** No curation action exists in any of
       the nine predefined project roles, so this could never have been solved by
