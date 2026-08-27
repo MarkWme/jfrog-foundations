@@ -136,40 +136,58 @@ today that gives `mkdirp@0.5.6`, which pulls `minimist@1.2.8` and is
 2020 it gives `mkdirp@0.5.5`, which pulls `minimist@1.2.5` and carries
 CVE-2021-44906 at Critical.
 
-So the lock file must be generated with a date cutoff, **inside a Codespace**:
+### Who regenerates it, and when
+
+**It is a committed artifact and a one-time maintainer task.** It is not
+generated per attendee and it is deliberately not wired into
+`scripts/setup.sh`.
+
+That is a design decision, not an omission. If every attendee regenerated it,
+the transitive tree would drift between deliveries: new advisories land against
+old versions constantly, and transitive dependencies patch themselves. The
+dependency table above would stop matching what Xray reports, and the
+remediation sequence the labs depend on would decay silently. A committed lock
+file is what makes the workshop reproducible, and `npm ci` is what enforces it.
+
+Regenerate it only when the dependency set in `package.json` changes:
 
 ```bash
-cd apps/node-dashboard
-npm install --before=2020-11-01 --no-audit --no-fund
+bash scripts/regenerate-lockfile.sh
 ```
 
-Three reasons it has to be a Codespace, all of which matter:
+Run that **inside a Codespace**. The script removes `node_modules`, resolves
+with the date cutoff, and then verifies its own output. It refuses to run if npm
+is pointed anywhere other than public npm, and it fails loudly if the required
+transitive versions did not land, because both mistakes are otherwise silent.
 
-1. **It must resolve from public npm.** A lock file resolved through Artifactory
-   embeds the instance hostname in every `resolved` URL, and this repository may
-   never contain a real tenant URL. Public URLs are also simply correct here:
-   attendees fork this repository and resolve from public npm until lab 07
-   re-points them at Artifactory.
-2. **A maintainer machine will not do.** A machine configured for JFrog routes
-   npm to Artifactory, and may block the public registry outright.
-3. **The date freezes the tree.** `2020-11-01` sits just after the newest direct
-   pin, `axios@0.21.0` from October 2020, so every direct pin still resolves and
-   the whole transitive tree is period-accurate. This is not a contrivance: it
-   is what a repository nobody has touched since 2020 actually looks like.
+### Why it is a script rather than an instruction
 
-Once generated and committed, `npm ci` reproduces it exactly and the date stops
-mattering.
+Three things have to be true at once, and getting any of them wrong fails
+quietly:
+
+1. **A clean tree.** npm seeds resolution from whatever is already in
+   `node_modules`. If modern versions are installed they satisfy the caret
+   ranges, nothing gets re-resolved, and `--before` does nothing whatsoever.
+   This is exactly how the first attempt produced `minimist@1.2.8` instead of
+   `1.2.5`: the devcontainer had already installed current versions at
+   create time.
+2. **Public npm.** A lock file resolved through Artifactory embeds the tenant
+   hostname in every `resolved` URL, and this repository may never contain a
+   real tenant URL. A maintainer machine configured for JFrog will fail this
+   check, which is the intended behavior.
+3. **The date cutoff.** `2020-11-01` sits just after the newest direct pin,
+   `axios@0.21.0` from October 2020, so every direct pin still resolves while
+   the transitive tree freezes period-accurate.
 
 > [!IMPORTANT]
-> After generating it, confirm the transitive Critical is actually present
-> before relying on lab 07:
+> After regenerating, confirm the chain from npm's own point of view:
 >
 > ```bash
-> npm ls minimist mkdirp
+> cd apps/node-dashboard && npm ls minimist mkdirp
 > ```
 >
-> You are looking for `mkdirp@0.5.5` and `minimist@1.2.5`. If you see
-> `minimist@1.2.8`, the cutoff did not apply and lab 07 needs revisiting.
+> Expect `mkdirp@0.5.5` and `minimist@1.2.5`. If you see `minimist@1.2.8` the
+> cutoff did not take effect and lab 07 has no subject.
 
 ---
 

@@ -288,9 +288,18 @@ The method, run **inside a Codespace**, which is a clean environment with no npm
 configuration:
 
 ```bash
-cd apps/node-dashboard
-npm install --before=2020-11-01 --no-audit --no-fund
+bash scripts/regenerate-lockfile.sh
 ```
+
+That wraps `npm install --before=2020-11-01`, and it exists as a script rather
+than an instruction because a fourth constraint emerged in testing: **npm seeds
+resolution from the existing `node_modules`.** The devcontainer installs
+dependencies at create time, so by the time anyone runs the command the tree is
+already populated with current versions, those satisfy the caret ranges, nothing
+is re-resolved and `--before` silently does nothing. The first attempt produced
+`minimist@1.2.8` for exactly this reason. The script removes the tree first,
+refuses to run against a non-public registry, and verifies the resulting
+transitive versions rather than trusting them.
 
 `--before=2020-11-01` sits just after the newest direct pin, `axios@0.21.0`
 from October 2020. Every direct pin therefore still resolves, and the whole

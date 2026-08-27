@@ -176,17 +176,23 @@ without dependencies.
       regression tests run against an empty and a populated config directory.
 
 - [ ] **B5. Generate the sample application lock file.**
-      **BLOCKER.** No `package-lock.json` is committed yet.
+      **BLOCKER.** In a Codespace:
       ```bash
-      cd apps/node-dashboard
-      npm install --before=2020-11-01 --no-audit --no-fund
+      bash scripts/regenerate-lockfile.sh
+      cd apps/node-dashboard && npm ls minimist mkdirp
       ```
-      **Why the date:** `2020-11-01` sits just after the newest direct pin,
-      `axios@0.21.0` from October 2020. Every direct pin still resolves, and the
-      transitive tree freezes period-accurate.
-      **Why a Codespace:** a maintainer machine routes npm to Artifactory, which
-      would embed the tenant hostname in every `resolved` URL. This repository
-      may never contain a real tenant URL.
+      **Attempt 1, 2026-08-27: produced the wrong tree.** The documented command
+      was a bare `npm install --before=...`, which had no effect: the
+      devcontainer installs dependencies at create time, npm seeds resolution
+      from the existing `node_modules`, current versions already satisfied the
+      caret ranges, so nothing was re-resolved. The whole transitive tree came
+      back modern, `follow-redirects@1.16.0` and `semver@5.7.2` among them.
+      Replaced by a script that removes the tree first, refuses a non-public
+      registry, and verifies its own output.
+      **This is a one-time maintainer task and the result is committed.** It is
+      deliberately not part of `setup.sh` and not run per attendee: a
+      regenerated tree drifts between deliveries and would silently decay the
+      remediation sequence the labs depend on.
 
 - [ ] **B6. Confirm the transitive Critical actually landed.**
       **BLOCKER**, and the single most consequential item in this file.
@@ -194,25 +200,40 @@ without dependencies.
       npm ls minimist mkdirp
       ```
       **Expect:** `mkdirp@0.5.5` and `minimist@1.2.5`.
-      **If you see `minimist@1.2.8`:** the cutoff did not apply. `minimist@1.2.8`
-      is patched, so lab 07's central exercise, tracing a Critical you cannot
-      fix by editing the line that caused it, has no subject. **Stop and tell
-      me**: lab 07 gets redesigned around a direct dependency instead.
 
-- [ ] **B7. Run the application and check every route.**
+      **Attempt 1, 2026-08-27: FAILED.** Got `mkdirp@0.5.6` and
+      `minimist@1.2.8`, which is patched, so lab 07 had no subject. Cause was
+      B5, not this check. Retest after regenerating with the script.
+
+      **If it fails again after using the script**, `--before` is not doing what
+      the design assumes, and this stops being a documentation problem. Stop and
+      tell me. The fallback is `overrides` in `package.json` pinning the
+      transitive directly, which works but is visible to a curious attendee and
+      therefore weakens lab 07's trace exercise, or redesigning lab 07 around a
+      direct dependency.
+
+- [x] **B7. Run the application and check every route.**
       **BLOCKER.** It has never been executed.
       ```bash
       cd apps/node-dashboard && npm start
       ```
       Then `/`, `/healthz`, `/api/status`, `/api/upstream`, `/api/token`,
       `/api/admin`, `/api/diagnostics`.
+      **Result 2026-08-27: pass.** App starts, UI opens, every endpoint
+      responds. `/api/status` returns sensible aggregates and the deterministic
+      data behaves: 3 healthy, 3 degraded, stable across reloads.
 
-- [ ] **B8. The Highcharts chart renders on `/`.**
+- [x] **B8. The Highcharts chart renders on `/`.**
       **HIGH.** Proves `express.static` is finding
       `node_modules/highcharts/highcharts.js`. If the chart area shows the
       fallback text instead, the static mount path is wrong.
+      **Result 2026-08-27: pass.** An uptime chart renders at the top of the
+      page, which is exactly the success condition: the chart drawing at all
+      means `express.static` found the library in `node_modules`. The fallback
+      would have been a line of plain text saying the chart library did not
+      load.
 
-- [ ] **B9. `/api/diagnostics` returns a valid archive.**
+- [x] **B9. `/api/diagnostics` returns a valid archive.**
       **HIGH**, and the most likely failure in this stage.
       ```bash
       curl -s localhost:3000/api/diagnostics | tar -tzf - | head
@@ -228,24 +249,48 @@ without dependencies.
       still vulnerable when resolved at the 2020 cutoff, and a plausible use in
       the application.
 
-- [ ] **B10. The token round trip works.** *MEDIUM.*
+      **Result 2026-08-27: pass, and this was the one I expected to fail.**
+      `tar@4.4.8` works on Node 22. The archive listed
+      `package.json`, `src/`, and the four source files, exactly the intended
+      contents, and hitting the endpoint from a browser produced a download.
+      So `tar` stays as the carrier for the `minimist` chain.
+
+- [x] **B10. The token round trip works.** *MEDIUM.*
       ```bash
-      TOKEN=$(curl -s localhost:3000/api/token | jq -r .token)
-      curl -s -H "Authorization: Bearer $TOKEN" localhost:3000/api/admin | jq
+      TOKEN="$(curl -fsS 127.0.0.1:3000/api/token | jq -r .token)"
+      curl -fsS -H "Authorization: Bearer ${TOKEN}" 127.0.0.1:3000/api/admin | jq
       ```
+      **Result 2026-08-27: endpoint works**, confirmed by hand. The original
+      one-liner did not, cause unknown. Rewritten to use `127.0.0.1` rather than
+      `localhost`, which removes an IPv6-versus-IPv4 ambiguity, and `-fsS` so a
+      failure is visible rather than producing an empty token silently.
+      **Still to confirm:** that the rewritten command works as pasted.
 
 - [ ] **B11. `axios@0.21.0` accepts `validateStatus: null`.** *MEDIUM.*
-      `src/app.js`, `probeUpstream`. Hit `/api/status` and check the `upstream`
-      object. Because the call is wrapped in try/catch, a wrong option name
-      fails silently by always taking the error path rather than reporting a
-      status code.
+      `src/app.js`, `probeUpstream`.
+      **Result 2026-08-27: inconclusive, and that is the honest answer.**
+      `/api/status` returned
+      `"upstream": {"reachable": true, "statusCode": 200, "elapsedMs": 42}`,
+      so axios works and nothing throws. But `validateStatus` only changes
+      behavior on a **non-2xx** response, and `example.com` returns 200, so this
+      run cannot distinguish a correct option name from an ignored one.
+      **To actually test it**, point the app at something that returns an error
+      status and confirm `reachable: true` with that status rather than
+      `reachable: false`:
+      ```bash
+      UPSTREAM_URL=https://example.com/nonexistent npm start
+      curl -fsS 127.0.0.1:3000/api/status | jq .upstream
+      ```
+      Low stakes either way: the call is wrapped in try/catch, so the worst case
+      is a probe that reports unreachable instead of a status code.
 
-- [ ] **B12. Build the container image, and time it.**
+- [x] **B12. Build the container image, and time it.**
       **HIGH.** Must be under two minutes in a Codespace.
       ```bash
       cd apps/node-dashboard && docker build -t node-dashboard:dev .
       ```
-      **Record:** the build time.
+      **Result 2026-08-27: pass, 22 seconds.** Comfortably inside the two minute
+      target, with plenty of headroom for the base image to grow.
 
 - [ ] **B13. Run the image.** **HIGH.**
       ```bash
@@ -253,19 +298,52 @@ without dependencies.
       ```
       Confirm the app serves under Node 16 and that `docker ps` eventually shows
       the healthcheck as healthy.
-      **Watch for:** `node_modules` was resolved by the build stage's npm 10 and
+      **Watch for:** `node_modules` was resolved by the build stage's npm and
       has to run on the runtime stage's Node 16. Every dependency is pure
-      JavaScript so this should hold, but it is untested.
+      JavaScript so this should hold.
 
-- [ ] **B14. Port 3000 forwards.** *MEDIUM.* Confirm it appears in the Ports
-      panel as Private and opens in the browser.
+      **Result 2026-08-27: pass.** Container runs, serves the UI, and
+      `docker ps` reports `Up (healthy)`, so the `HEALTHCHECK` works and the
+      cross-version `node_modules` copy is fine.
+      **Still to confirm, the Node 16 runtime itself.** Two ways, either is
+      enough:
+      ```bash
+      docker exec <container> node --version          # expect v16.20.2
+      ```
+      or read it out of the application, which reports its own runtime:
+      ```bash
+      TOKEN="$(curl -fsS 127.0.0.1:3000/api/token | jq -r .token)"
+      curl -fsS -H "Authorization: Bearer ${TOKEN}" 127.0.0.1:3000/api/admin \
+        | jq .configuration.nodeVersion
+      ```
+      Note that the second one reports **v22** when run against `npm start` in
+      the Codespace and must report **v16** against the container. That
+      difference is the whole point of the two-stage build, and it is worth
+      seeing once.
+
+- [x] **B14. Port 3000 forwards.** *MEDIUM.*
+      **Result 2026-08-27: pass.** Appears in the Ports panel, app and API both
+      reachable in the browser.
 
 - [ ] **B15. Rebuild the container and confirm the lock file survives.**
-      **HIGH.** After B5, a rebuild should take the `npm ci` path and leave
-      `package-lock.json` untouched.
-      **Why:** the fallback path is deliberately `--no-package-lock`, so that an
-      install can never silently write a wrong lock file. This confirms the
-      guard works in the direction that matters.
+      **HIGH.** Do this **after** the lock file from B5 is committed, otherwise
+      there is nothing to preserve and the test is meaningless.
+
+      There is no command to run first. Rebuild from the command palette:
+      `Codespaces: Rebuild Container`. Then, once it comes back:
+      ```bash
+      git status --short apps/node-dashboard/package-lock.json
+      cd apps/node-dashboard && npm ls minimist mkdirp
+      ```
+      **Expect:** `git status` reports **nothing**, meaning the file is
+      unmodified, and the tree still shows `mkdirp@0.5.5` and `minimist@1.2.5`.
+      **If `git status` shows the file as modified**, the rebuild rewrote it.
+      That is the failure this item exists to catch.
+      **Why it matters:** the no-lock-file fallback in `updateContent.sh` is
+      deliberately `--no-package-lock`, so an install can never silently write a
+      wrong lock file. With a lock file present it must take the `npm ci` path
+      instead and leave the file alone. B5's failure is what this guard is
+      protecting against, so it is worth confirming it works.
 
 ---
 
