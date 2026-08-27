@@ -791,7 +791,35 @@ carries the most design risk. About thirty minutes.
       | B | Drop it, make labs 02 and 11 instructor-demonstrated | Clean isolation, but attendees lose hands-on Curation, which is a headline of the workshop |
       | C | Grant it only before lab 02, via a `prep.sh` flag the instructor runs mid-day | Clean isolation for labs 00 and 01, extra moving part on the day |
 
-      **RESOLVED 2026-08-27: option A.** `policy_manager` stays.
+      **RESOLVED 2026-08-27, but not with option A. Superseded by a better
+      answer: a separate shared administrator account.**
+
+      `policy_manager` was proven to work, and then rejected. Two reasons, and
+      the first is the important one. Curation has **no interface for a non-admin
+      account**, so granting the permission would have forced labs 02 and 11 to
+      teach Curation through the REST API. That contradicts the premise of the
+      workshop, which starts from no prior JFrog experience, and it front-runs
+      the CLI that `SPEC.md` does not introduce until lab 04. Second, it widened
+      project visibility, undercutting the isolation story lab 00 has just
+      finished explaining.
+
+      **What is done instead:** `prep.sh` creates one shared platform admin
+      account, `workshop-admin`, listed once on the handout. Attendee accounts
+      hold no platform permission at all. Labs 02 and 11 have the attendee sign
+      in as the administrator, and back as themselves afterwards.
+
+      **The switch is treated as teaching material, not a workaround.** Being
+      told "no" by the platform and then seeing which account can do the task
+      teaches the permission model better than describing it. Lab 00 already
+      frames the missing Curation menu entry that way, and says plainly that the
+      elevation exists because of a current platform limitation with a known
+      expiry rather than because Curation is inherently admin-only.
+
+      `PLAN.md` section 7 carries the full reasoning, including why this does not
+      breach the section 9 provisioning boundary: an account and its permissions
+      are exactly what `prep.sh` is allowed to create.
+
+      **Superseded record, kept because the evidence is still useful:**
 
       Both tests came back positive. `prep.sh` reported
       `curation user01 holds 'Manage policies'`, and as the attendee
@@ -889,10 +917,40 @@ avoid renumbering anything.
 
       Recorded as step 7 of `docs/tenant-prerequisites.md`.
 
+      **2026-08-27: cleared on the development instance.** The policies were
+      Mark's own, from previous demonstrations, and have been deleted. This item
+      stays open as a **per-delivery check**, not a one-time fix: it is the
+      realistic state of any reused tenant, and it fails silently.
+
       **Note this cuts the other way too**, and it is worth saying to the room:
       these policies are exactly what a customer *should* have in production. The
       workshop needs them out of the way to teach; a real environment wants them
       on.
+
+- [ ] **H2. The shared admin account works for Curation in the UI.**
+      **BLOCKER.** This is the replacement for D12 and nothing has confirmed it
+      yet.
+      Re-run `prep.sh` so `workshop-admin` is created, then sign in as it and
+      confirm **Curation appears in the Administration menu** and a policy can be
+      created and scoped to a named repository.
+      **If Curation is still absent even for a platform admin**, the entitlement
+      is missing on the instance rather than the permission being wrong, which is
+      a C1 question.
+
+- [ ] **H3. Attendee accounts see only their own project again.**
+      **HIGH.** `policy_manager` widened project visibility, and it has been
+      removed. Confirm the selector is back to two entries, **All Projects** and
+      the attendee's own, because lab 00 step 6 has been reverted to say exactly
+      that.
+      Use a **freshly created** attendee account: an account that previously held
+      `policy_manager` may retain the broader view.
+      **If the wide view persists**, lab 00 step 6 needs the honest wording back
+      and this becomes a permanent characteristic to describe rather than hide.
+
+- [ ] **H4. The handout carries the shared admin credentials.** *MEDIUM.*
+      Confirm `provisioning/out/handout.md` has the admin section above the
+      attendee table, with a working password, and that re-running carries it
+      forward like the attendee passwords.
 
 ---
 

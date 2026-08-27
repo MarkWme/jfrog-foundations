@@ -13,7 +13,21 @@ Everything here is instructor prep. Attendees never run it.
 3. A **project membership** giving that user the project administrator role
    inside their own project, and nowhere else.
 
-Then it writes a handout to `provisioning/out/`.
+Plus **one shared platform administrator account**, `workshop-admin`, for the
+whole room.
+
+Attendee accounts hold no platform-level permission at all, deliberately. The
+shared admin exists because Curation cannot be scoped to a project and has no
+non-admin interface, so labs 02 and 11 are done as an administrator. That switch
+is treated as teaching material rather than an inconvenience: it shows attendees
+exactly where the platform's permission boundary sits. `PLAN.md` section 7 has
+the full reasoning.
+
+Use `--admin-user NAME` to rename it, or `--no-admin-user` to skip it if you are
+handling elevation another way.
+
+Then it writes a handout to `provisioning/out/`, with the shared admin
+credentials in their own section above the attendee table.
 
 ## What it deliberately does not create
 

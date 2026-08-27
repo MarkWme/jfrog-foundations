@@ -85,8 +85,12 @@ Some terminology, all of which is in the [glossary](../../docs/glossary.md):
   frequently carry policy restrictions that block forking or Codespaces, and
   that is a slow problem to diagnose. Sign up free at
   [github.com/join](https://github.com/join).
-- The **handout** from your instructor. It has four things on it: the instance
-  URL, your project key, your username and your password. You need all four.
+- The **handout** from your instructor. It has four things you need now: the
+  instance URL, your project key, your username and your password.
+
+  It also has a **shared administrator account** on it. Ignore that for now. You
+  will use it in two later labs, for one specific reason that is explained when
+  you get there. Everything up to that point is done as yourself.
 - A browser.
 
 That is the whole list. You will not install anything.
@@ -202,14 +206,9 @@ left-hand navigation menu:
 
 ![The project selection dropdown](images/projects-selection.png)
 
-You will see **All Projects**, your own project, and everyone else's projects
-too. That is expected, and it is worth understanding rather than worrying about:
-you can *see* other projects but you cannot change anything in them. Read-only
-visibility comes bundled with a platform-level permission you need later, for the
-Curation labs.
-
-Isolation here is about **who can change what**, not about who can see what. Your
-project is the only one you can write to.
+You will see two entries: **All Projects**, and your own project. Everyone
+else's projects are invisible to you, which is the isolation described in the
+Concept section doing its job.
 
 **Select your project.**
 
@@ -232,11 +231,23 @@ first thing to check is whether you are still in All Projects.**
 > affect other people's work. Do not.
 
 One thing you will notice is missing: there is no **Curation** entry in the
-project menu. That is expected, and it is a real characteristic of the platform
-rather than something wrong with your account. Curation does not yet support
-projects, so it is administered at the instance level instead. Lab 02 deals with
-this directly, including what it means for sharing an instance with fourteen
-other people.
+project menu. That is expected, and it is worth understanding now because it is
+the first time the platform will tell you "no".
+
+Curation does not yet support projects. It is configured for the whole instance,
+so a project-scoped account like yours cannot reach it at all. That is why your
+handout also carries a shared administrator account: lab 02 has you sign in as
+that account to work with Curation, and back as yourself afterwards.
+
+Two things worth taking from that, both of which matter more than the
+inconvenience:
+
+- **This is what platform access control looks like from the inside.** Your
+  account can do a great deal inside your project and nothing outside it. Being
+  told "no" here is the system working.
+- **It is temporary.** Project support for Curation is on the JFrog roadmap. When
+  it lands, this detour disappears and Curation joins everything else inside your
+  project.
 
 ### 7. Connect the JFrog CLI
 

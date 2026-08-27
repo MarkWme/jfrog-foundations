@@ -34,6 +34,20 @@ JF_TOKEN="${JF_ACCESS_TOKEN:-}"
 COUNT=""
 PREFIX="user"
 EMAIL_DOMAIN="workshop.invalid"
+
+# One shared platform administrator account, used by attendees for the tasks the
+# platform does not expose to a project-scoped user. Today that means Curation,
+# which has no project scoping and no non-admin UI.
+#
+# This is deliberately a separate account rather than extra permissions on the
+# attendee accounts, and the reason is pedagogical as much as practical. It keeps
+# every userNN account realistically restricted, so the project isolation story
+# stays true, and it makes "you have to switch to an admin account for this"
+# something the attendee experiences rather than reads. Access control becomes
+# part of the lesson instead of a workaround.
+#
+# Set to an empty string with --no-admin-user to skip creating it.
+ADMIN_USER="workshop-admin"
 OUT_DIR="${SCRIPT_DIR}/out"
 DRY_RUN=0
 
@@ -44,10 +58,10 @@ DRY_RUN=0
 # Confirmed against a live instance on 2026-08-27: "Project Admin" exists, is
 # type ADMIN, and carries the actions the labs need, including CREATE_LOCAL_REPO,
 # CREATE_REMOTE_REPO, CREATE_VIRTUAL_REPO, POLICIES_SECURITY and
-# WATCHES_SECURITY. Notably it carries no curation action, which is why the
-# Curation permission is granted separately on the user, see policy_manager
-# below. validate_role() checks this name against the instance before use, so a
-# wrong name fails with the real list rather than silently assigning nothing.
+# WATCHES_SECURITY. Notably it carries no curation action, which is why Curation
+# needs the separate shared admin account rather than a project role.
+# validate_role() checks this name against the instance before use, so a wrong
+# name fails with the real list rather than silently assigning nothing.
 # https://docs.jfrog.com/projects/reference/addorupdateprojectuser
 ROLE="Project Admin"
 
@@ -85,6 +99,9 @@ Options:
   --email-domain DOM  Domain for generated user emails.
                       Default: workshop.invalid (a reserved TLD, so these
                       addresses cannot reach a real mailbox)
+  --admin-user NAME   Name of the shared admin account used for the Curation
+                      labs. Default: workshop-admin
+  --no-admin-user     Do not create the shared admin account.
   --out DIR           Where to write the handout. Default: provisioning/out
   --dry-run           Print what would be created, change nothing.
   -h, --help          This message.
@@ -99,6 +116,8 @@ while [ "$#" -gt 0 ]; do
         --prefix)       PREFIX="${2:-}"; shift 2 ;;
         --role)         ROLE="${2:-}"; shift 2 ;;
         --email-domain) EMAIL_DOMAIN="${2:-}"; shift 2 ;;
+        --admin-user)   ADMIN_USER="${2:-}"; shift 2 ;;
+        --no-admin-user) ADMIN_USER=""; shift ;;
         --out)          OUT_DIR="${2:-}"; shift 2 ;;
         --dry-run)      DRY_RUN=1; shift ;;
         -h|--help)      usage; exit 0 ;;
@@ -259,34 +278,6 @@ validate_role() {
     die "Re-run with --role set to one of the names listed above."
 }
 
-# Confirms the user actually holds the Curation permission.
-#
-# Read back rather than assumed for two reasons. On Artifactory older than
-# 7.128.0 the policy_manager field is ignored silently instead of being
-# rejected, so creation succeeds and the permission is absent. And a user that
-# already existed was never sent the field at all, because this script does not
-# modify existing accounts.
-# https://docs.jfrog.com/administration/reference/getUserDetails
-verify_curation_permission() {
-    local username="$1" code
-    code="$(api GET "/access/api/v2/users/${username}")"
-    if [ "${code}" != "200" ]; then
-        echo "  curation WARNING: could not read ${username} back (${code})"
-        return 1
-    fi
-    if grep -qE '"policy_manager"[[:space:]]*:[[:space:]]*true' "${RESP}"; then
-        echo "  curation ${username} holds 'Manage policies'"
-        return 0
-    fi
-    echo "  curation MISSING: ${username} does not hold 'Manage policies'"
-    echo "           Labs 02 and 11 need it. Either delete this user and re-run,"
-    echo "           or assign it in the UI under Administration, Identity and"
-    echo "           Access, Users, ${username}, Roles, Assign Roles,"
-    echo "           'Manage policies'. If the instance predates Artifactory"
-    echo "           7.128.0 the API field is ignored and the UI is the only route."
-    return 1
-}
-
 # Reads the membership back and confirms both the user and the role are present.
 # https://docs.jfrog.com/projects/reference/getprojectusers
 verify_membership() {
@@ -425,19 +416,20 @@ for i in $(seq 1 "${COUNT}"); do
 
     # 2. User.
     # https://docs.jfrog.com/administration/reference/createuser
-    # policy_manager grants the platform's "Manage policies" role, which is what
-    # JFrog Curation requires to create, edit and delete Curation policies.
+    # Attendee accounts are deliberately NOT given any platform-level
+    # permission. They hold exactly one thing: the Project Admin role inside
+    # their own project.
     #
-    # This is the answer to the Curation permission question, and it matters that
-    # it is NOT admin. Curation has three roles: Platform Admin, Manage Policies
-    # and Read Policies. Curation has no project scoping, so the permission has
-    # to be granted outside the project, and the obvious fallback was to make
-    # every attendee a platform administrator. This is far narrower: attendees
-    # can manage policies, and cannot delete each other's projects or users.
-    # https://docs.jfrog.com/security/docs/set-user-roles-and-permissions
+    # An earlier version granted policy_manager here so attendees could manage
+    # Curation policies, which Curation cannot scope to a project. It worked, and
+    # it was the wrong trade. It widened project visibility so every attendee
+    # could see every project, and Curation still appeared on no menu for a
+    # non-admin, so the labs would have had to teach Curation through the REST
+    # API. That is too much for a workshop whose premise is no prior JFrog
+    # experience.
     #
-    # Requires Artifactory 7.128.0 or later. On an older instance the field is
-    # ignored silently rather than rejected, which is why it is read back below.
+    # Instead there is one shared administrator account, created below, which
+    # attendees switch to for the Curation labs. See the ADMIN_USER section.
     user_body="$(jq -n \
         --arg username "${username}" \
         --arg email "${email}" \
@@ -447,7 +439,6 @@ for i in $(seq 1 "${COUNT}"); do
             email: $email,
             password: $password,
             admin: false,
-            policy_manager: true,
             profile_updatable: true,
             disable_ui_access: false,
             internal_password_disabled: false
@@ -510,12 +501,74 @@ for i in $(seq 1 "${COUNT}"); do
         step_fail=$((step_fail + 1))
     fi
 
-    if ! verify_curation_permission "${username}"; then
-        step_fail=$((step_fail + 1))
-    fi
-
     rows+=("${key}|${key}|${username}|${password}|${password_note}")
 done
+
+# ----------------------------------------------------- shared admin account
+
+admin_password=""
+if [ -n "${ADMIN_USER}" ]; then
+    echo ""
+    echo "[${ADMIN_USER}]  shared administrator, for the Curation labs"
+
+    if [ "${DRY_RUN}" -eq 1 ]; then
+        echo "  would create platform admin user ${ADMIN_USER}"
+    else
+        admin_password="$(gen_password)"
+        admin_body="$(jq -n \
+            --arg username "${ADMIN_USER}" \
+            --arg email "${ADMIN_USER}@${EMAIL_DOMAIN}" \
+            --arg password "${admin_password}" \
+            '{
+                username: $username,
+                email: $email,
+                password: $password,
+                admin: true,
+                profile_updatable: true,
+                disable_ui_access: false,
+                internal_password_disabled: false
+            }')"
+
+        code="$(api POST "/access/api/v2/users" "${admin_body}")"
+        case "${code}" in
+            200|201) echo "  user     created with platform admin"; step_ok=$((step_ok + 1)) ;;
+            409)
+                echo "  user     already exists, password NOT changed"
+                carried="$(prev_password "${ADMIN_USER}" 2>/dev/null || true)"
+                case "${carried}" in
+                    ""|"("*)
+                        admin_password="(unknown: reset in the UI or delete the user and re-run)"
+                        ;;
+                    *)
+                        admin_password="${carried}"
+                        echo "           password carried forward from the previous handout"
+                        ;;
+                esac
+                step_skip=$((step_skip + 1))
+                ;;
+            *)  echo "  user     FAILED (${code}): $(err_body)"
+                admin_password="(not set: creation failed)"
+                step_fail=$((step_fail + 1))
+                ;;
+        esac
+
+        # Read the admin flag back. Same principle as everywhere else in this
+        # script: a 2xx says the request was accepted, not that it did what was
+        # wanted, and an account that is silently not an admin would fail in
+        # lab 02 in front of the room.
+        code="$(api GET "/access/api/v2/users/${ADMIN_USER}")"
+        if [ "${code}" = "200" ] && grep -qE '"admin"[[:space:]]*:[[:space:]]*true' "${RESP}"; then
+            echo "  verify   ${ADMIN_USER} holds platform admin"
+        else
+            echo "  verify   FAILED: ${ADMIN_USER} is not a platform admin"
+            echo "           Labs 02 and 11 need it. Assign it under Administration,"
+            echo "           Identity and Access, Users, ${ADMIN_USER}."
+            step_fail=$((step_fail + 1))
+        fi
+
+        rows+=("shared-admin|(all projects)|${ADMIN_USER}|${admin_password}|platform admin, Curation labs")
+    fi
+fi
 
 # ---------------------------------------------------------------- handout
 
@@ -536,6 +589,28 @@ done
     echo "# JFrog Foundations: attendee handout"
     echo ""
     echo "Instance URL: \`${JF_URL}\`"
+    echo ""
+    if [ -n "${ADMIN_USER}" ]; then
+        echo "## Shared administrator account"
+        echo ""
+        echo "Everyone uses this **in addition to** their own account, and only for"
+        echo "labs 02 and 11. Curation cannot yet be scoped to a project and has no"
+        echo "non-admin interface, so those labs are done as an administrator."
+        echo "That switch is part of the lesson: it shows how the platform"
+        echo "restricts what a project-scoped user can reach."
+        echo ""
+        echo "| Username | Password |"
+        echo "| --- | --- |"
+        echo "| \`${ADMIN_USER}\` | \`${admin_password}\` |"
+        echo ""
+        echo "> Attendees should use their own account for every other lab. Anything"
+        echo "> created as the shared admin is visible to, and editable by, the whole"
+        echo "> room."
+        echo ""
+        echo "---"
+        echo ""
+    fi
+    echo "## Attendee accounts"
     echo ""
     echo "Hand one row to each attendee. They need all four values in lab 00."
     echo ""

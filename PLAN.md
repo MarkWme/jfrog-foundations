@@ -464,7 +464,60 @@ action appears in any of the nine predefined project roles.** So this is not a
 matter of picking the right project role. Curation genuinely sits outside the
 project boundary today.
 
-### Curation has no UI for a non-admin attendee
+### Curation is done as a shared administrator, and that is the lesson
+
+**Decided 2026-08-27, after live verification.** Curation cannot be scoped to a
+project and has **no interface at all for a non-admin account**. Two routes were
+considered and one was rejected.
+
+**Rejected: grant attendees `policy_manager` and teach Curation through the REST
+API.** It works technically, confirmed on a live instance. It was the wrong
+answer twice over. Teaching a product through raw REST contradicts the premise in
+`SPEC.md` section 1, that this workshop starts from no prior JFrog experience,
+and it front-runs the CLI, which `SPEC.md` section 10 does not introduce until
+lab 04. It also widened project visibility as a side effect, so every attendee
+could see every project, which undercut the isolation story lab 00 has just
+finished explaining.
+
+**Chosen: one shared platform administrator account**, created by
+`provisioning/prep.sh` as `workshop-admin` and listed once on the handout.
+Attendees work as themselves throughout, and sign in as the administrator only
+for labs 02 and 11.
+
+Labs 02 and 11 therefore stay **UI led**, as `SPEC.md` intends, and the Curation
+API belongs in a later advanced module once the CLI has been properly introduced.
+
+**This is a better answer than a workaround, because the switch is teachable.**
+Three things fall out of it that the workshop wants anyway:
+
+1. **Access control becomes something the attendee experiences.** Being told "no"
+   by the platform, then seeing exactly which account can do the task, teaches
+   more about the permission model than any amount of description. Lab 00 already
+   frames the missing Curation menu entry this way rather than apologizing for it.
+2. **Attendee accounts stay realistically restricted.** No platform permission on
+   any `userNN` account, so the project boundary the whole day is built on stays
+   true, and the selector still shows only their own project.
+3. **It sets up a real customer conversation.** "Which tasks require elevation,
+   and who holds those accounts" is a question every customer has to answer, and
+   the workshop now demonstrates it instead of asserting it.
+
+Both labs must say plainly that the elevation exists **because of a current
+platform limitation with a known expiry**, not because Curation is inherently an
+admin-only concern. When project scoping lands, the shared account goes away.
+
+**Cost, stated honestly:** anything created as the shared admin is visible to and
+editable by the whole room, so the attendee-prefix naming and repository scoping
+discipline below is doing all the isolation work in labs 02 and 11. That is the
+same exposure as before, not a new one.
+
+### The provisioning boundary still holds
+
+`SPEC.md` section 9 restricts `prep.sh` to what an attendee cannot reasonably
+create: the project, their account, their permissions. A shared administrator
+account is squarely in that category, so this is not a boundary breach. It
+creates no repository, policy, watch or build.
+
+### Reference: the Curation API, for the later advanced module
 
 Verified on a live instance, 2026-08-27. With `policy_manager` granted, an
 attendee **can** manage Curation policies through the API, confirmed by
