@@ -36,8 +36,19 @@ signal the lab needs rewriting. Raise it rather than extending this script.
   provisioned. Capability provisioning is outside this repository, and no lab
   checks for it. See [`../docs/tenant-prerequisites.md`](../docs/tenant-prerequisites.md).
 - A **platform administrator access token** for that instance.
-- `bash`, `curl` and `jq` on the machine you run this from. A Mac with the
-  Xcode command line tools plus `brew install jq` is enough.
+- `bash`, the **JFrog CLI** (`jf`) and `jq` on the machine you run this from.
+  A Mac with the Xcode command line tools, `brew install jq` and the JFrog CLI
+  is enough.
+
+  The script talks to the platform through `jf api`, the CLI's authenticated
+  passthrough to any JFrog Platform REST endpoint. That is deliberate on two
+  counts: it reads better than a hand-built `curl`, and anyone poking around in
+  this script picks up a command they can use themselves. The endpoint paths are
+  cited inline, so you can still see exactly which REST APIs are being called.
+
+  It writes its temporary CLI configuration to a throwaway directory, so it
+  **cannot touch the server profiles you already have**, and the admin token
+  never appears on a command line where `ps` would show it.
 
 ## Running it
 

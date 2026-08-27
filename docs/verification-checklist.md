@@ -132,6 +132,15 @@ without dependencies.
       **If it fails:** container creation would report a scary warning to every
       attendee before lab 00, which is exactly the first impression to avoid.
 
+      **Attempt 2, 2026-08-27 after the fix: PASS in this direction.** A fresh
+      Codespace reports `no server named "workshop" configured yet` as
+      information, the summary reads `All required tools present`, and creation
+      completed rather than stalling.
+      **The other direction is still untested** and is covered by D5 and D6:
+      with a server actually configured, this must report `[ ok ] connection`
+      and a real ping result. Bug 1 survived precisely because only the fresh
+      direction was ever exercised, so that half is not optional.
+
       **Attempt 1, 2026-08-27: FAILED. Two bugs found, both fixed, needs a
       retest.** On a fresh Codespace with no credentials, `verify.sh` printed
 

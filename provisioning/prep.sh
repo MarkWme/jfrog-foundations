@@ -20,7 +20,7 @@
 #
 #   ./prep.sh --url https://example.jfrog.io --count 15 --dry-run
 #
-# Requires: bash, curl, jq
+# Requires: bash, jf (the JFrog CLI), jq
 
 set -euo pipefail
 
@@ -66,7 +66,7 @@ Usage:
   ./prep.sh --url https://example.jfrog.io --count 15
   ./prep.sh --url https://example.jfrog.io --count 15 --dry-run
 
-Requires: bash, curl, jq
+Requires: bash, jf (the JFrog CLI), jq
 
 Options:
   --url URL           JFrog platform base URL, no trailing slash.
@@ -104,7 +104,7 @@ done
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
-for tool in curl jq; do
+for tool in jf jq; do
     command -v "${tool}" >/dev/null 2>&1 || die "'${tool}' is required but not on PATH."
 done
 
@@ -132,22 +132,62 @@ esac
 # ---------------------------------------------------------------- plumbing
 
 RESP="$(mktemp)"
-trap 'rm -f "${RESP}"' EXIT
+ERRF="$(mktemp)"
 
-# api METHOD PATH [JSON_BODY] -> prints HTTP status, body lands in $RESP
+# The JFrog CLI keeps its server configurations in JFROG_CLI_HOME_DIR. Pointing
+# that at a throwaway directory does two useful things: it guarantees this
+# script cannot touch or clobber the server profiles you already have, and it
+# keeps the admin token out of every command line, where "ps" would show it, by
+# putting it in one mode-600 file that is deleted on exit.
+PREP_HOME="$(mktemp -d)"
+export JFROG_CLI_HOME_DIR="${PREP_HOME}"
+export JFROG_CLI_OFFER_CONFIG=false
+export JFROG_CLI_AVOID_NEW_VERSION_WARNING=true
+
+SERVER_ID="workshop-prep"
+
+cleanup() { rm -rf "${RESP}" "${ERRF}" "${PREP_HOME}"; }
+trap cleanup EXIT
+
+jf config add "${SERVER_ID}" \
+    --url "${JF_URL}" \
+    --access-token "${JF_TOKEN}" \
+    --interactive=false >/dev/null 2>&1 \
+    || die "Could not create a temporary JFrog CLI configuration for ${JF_URL}."
+
+# api METHOD PATH [JSON_BODY] -> prints the HTTP status code, body lands in $RESP
+#
+# Uses "jf api", the JFrog CLI's authenticated passthrough to any JFrog Platform
+# REST endpoint. It reads better than a hand-built curl, and an SE or attendee
+# reading this script picks up a command they can use themselves, which a raw
+# curl does not teach.
+#
+# jf api writes the response body to stdout and a line of the form
+#     12:00:25 [Info] Http Status: 409
+# to stderr, exiting non-zero for any non-2xx while still printing the body.
+# This script branches on the status code rather than the exit code, because the
+# distinction matters: 409 means "already exists", which is success here, while
+# 400 on the role step means the role name is wrong.
 api() {
     local method="$1" path="$2" body="${3:-}"
-    local -a args=(
-        --silent --show-error
-        --output "${RESP}"
-        --write-out '%{http_code}'
-        --request "${method}"
-        --header "Authorization: Bearer ${JF_TOKEN}"
-        --header "Content-Type: application/json"
-        "${JF_URL}${path}"
-    )
-    [ -n "${body}" ] && args+=(--data "${body}")
-    curl "${args[@]}"
+    local -a args=(api "${path}" --method "${method}" --server-id "${SERVER_ID}")
+    [ -n "${body}" ] && args+=(--header "Content-Type: application/json" --data "${body}")
+
+    : > "${RESP}"; : > "${ERRF}"
+    jf "${args[@]}" >"${RESP}" 2>"${ERRF}" || true
+
+    local status
+    status="$(sed -n 's/.*Http Status: \([0-9][0-9][0-9]\).*/\1/p' "${ERRF}" | tail -n 1)"
+
+    if [ -z "${status}" ]; then
+        # No status line means the request never reached the platform at all:
+        # DNS, TLS, or a refused connection. The CLI's own message is the useful
+        # part, so put it where the caller's error handling will print it.
+        cat "${ERRF}" >> "${RESP}"
+        echo "000"
+    else
+        echo "${status}"
+    fi
 }
 
 # Deliberately excludes characters that are misread when typed from a printed
@@ -184,6 +224,8 @@ case "${code}" in
     200) echo "  Token accepted, and it can list projects." ;;
     401) die "Authentication failed (401). The token is wrong or expired." ;;
     403) die "Authorization failed (403). This token is not a platform admin token." ;;
+    000) die "Could not reach ${JF_URL} at all. The CLI reported:
+$(cat "${RESP}")" ;;
     *)   die "Unexpected response ${code} from ${JF_URL}/access/api/v1/projects. Body: $(cat "${RESP}")" ;;
 esac
 echo ""
