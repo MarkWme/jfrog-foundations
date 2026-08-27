@@ -401,14 +401,20 @@ B5.
 
 Provisioning. About thirty minutes.
 
-- [ ] **C1. Confirm the required capabilities are enabled** on the delivery
+**Stage C is complete as of 2026-08-27.** All eight items pass. Two defects were
+found and fixed: the `jf api` argument order in C3, and the handout being
+destroyed by a re-run in C7. The role name `Project Admin` is confirmed correct,
+and Stage C also narrowed D12 by proving no project role carries any curation
+action.
+
+- [x] **C1. Confirm the required capabilities are enabled** on the delivery
       instance: Artifactory, Xray, JFrog Advanced Security, and **Curation**,
       which is not in a default trial. **HIGH.** Nothing in the repository
       checks for these or degrades without them, deliberately.
 
-- [ ] **C2. Create a platform administrator access token.** *MEDIUM.*
+- [x] **C2. Create a platform administrator access token.** *MEDIUM.*
 
-- [ ] **C3. `prep.sh --dry-run` succeeds.** *MEDIUM.*
+- [x] **C3. `prep.sh --dry-run` succeeds.** *MEDIUM.*
       ```bash
       cd provisioning
       export JF_ACCESS_TOKEN='<platform admin token>'
@@ -443,6 +449,9 @@ Provisioning. About thirty minutes.
 
       The process lesson is recorded in `CONTRIBUTING.md`: anything invoking
       `jf` gets tested against the pinned version, not the local one.
+
+      **Attempt 2, 2026-08-27: PASS.** Token preflight succeeded and the plan
+      printed without creating anything.
 
 - [ ] **C4. `prep.sh --count 2` creates projects and users.** **HIGH.**
       Confirms `POST /access/api/v1/projects` and `POST /access/api/v2/users`.
@@ -531,7 +540,7 @@ Provisioning. About thirty minutes.
       The one-time role validation line now says "checked once", because under
       `[user01]` it read as though `user02` had been skipped.
 
-- [ ] **C7. The handout is correct and protected.** *MEDIUM.*
+- [x] **C7. The handout is correct and protected.** *MEDIUM.*
       `provisioning/out/handout.md` and `.csv`, mode `600`, with the instance
       URL, project key, username and password per attendee. Confirm
       `provisioning/out/` is gitignored.
@@ -552,15 +561,25 @@ Provisioning. About thirty minutes.
       dead end. Placeholders are also comma free now, since one of them
       contained a comma and would have broken the CSV it is parsed from.
 
-      **On the retest**, both rows should show real `Frog-` passwords carried
-      forward, not placeholders. Note that `user01` and `user02` on this instance
-      pre-date the first successful run, so they may legitimately stay unknown:
-      resetting them in the UI, or deleting both users and re-running, gives a
-      clean baseline for Stage D.
+      **Attempt 2, 2026-08-27: PASS.** Users and projects were deleted and
+      recreated from scratch, giving a clean baseline, then `prep.sh` was run
+      again: the handout kept the real passwords rather than overwriting them
+      with placeholders. Carry forward confirmed working against a live
+      instance.
+      **Consequence for Stage D:** both `user01` and `user02` now have known
+      passwords in the handout, so either can be used to work through lab 00.
 
-- [ ] **C8. Error paths are readable.** *MEDIUM.* Run once with a deliberately
+- [x] **C8. Error paths are readable.** *MEDIUM.* Run once with a deliberately
       bad token and confirm the 401 and 403 messages are clear rather than a
       raw dump.
+
+      **2026-08-27: PASS.**
+      ```
+      ERROR: Authentication failed (401). The token is wrong or expired.
+      ```
+      One line, names the cause, no stack trace and no HTML. This is the failure
+      an SE is most likely to hit under time pressure, so it is worth it reading
+      like that.
 
 ---
 
