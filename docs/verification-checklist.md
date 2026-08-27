@@ -453,7 +453,7 @@ action.
       **Attempt 2, 2026-08-27: PASS.** Token preflight succeeded and the plan
       printed without creating anything.
 
-- [ ] **C4. `prep.sh --count 2` creates projects and users.** **HIGH.**
+- [x] **C4. `prep.sh --count 2` creates projects and users.** **HIGH.**
       Confirms `POST /access/api/v1/projects` and `POST /access/api/v2/users`.
 
       **2026-08-27: PASS.** Both projects and both users created. The
@@ -481,7 +481,7 @@ action.
       for `user01`. **Use `user02` for Stage D**, or reset `user01` in the UI
       first.
 
-- [ ] **C5. The project role name is correct.**
+- [x] **C5. The project role name is correct.**
       **BLOCKER.** `provisioning/prep.sh`, `ROLE`, currently `Project Admin`.
       Taken from the platform UI, because the
       [REST API reference](https://docs.jfrog.com/projects/reference/addorupdateprojectuser)
