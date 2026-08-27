@@ -53,8 +53,8 @@ the current UI rather than trusted.
 | Path | Shows | Used in |
 | --- | --- | --- |
 | `labs/00-setup/images/artifactory-sign-in-page.png` | The platform sign-in page | Lab 00 step 5 |
-| `labs/00-setup/images/jfrog-platform-trial-welcome-screen.png` | The welcome page after signing in | Lab 00 step 5 |
-| `labs/00-setup/images/projects-selection.png` | The project selector dropdown | Lab 00 step 6 |
+| ~~`labs/00-setup/images/jfrog-platform-trial-welcome-screen.png`~~ | **STALE, no longer referenced.** Verified 2026-08-27: a provisioned attendee lands on an All Projects / Get Started Best Practices page, not this screen. Delete this file once `all-projects-landing.png` below is captured. | none |
+| `labs/00-setup/images/projects-selection.png` | The project selector dropdown | Lab 00 step 6. Behavior confirmed 2026-08-27: an attendee sees exactly two entries, All Projects and their own. Worth refreshing so the image matches, but not blocking. |
 
 ---
 
@@ -74,6 +74,25 @@ the current UI rather than trusted.
       repository name in the breadcrumb shows a personal account rather than
       the upstream organization.
       **Referenced at:** lab 00 step 3.
+
+- [ ] `labs/00-setup/images/all-projects-landing.png`
+      **Capture:** the page a freshly provisioned attendee lands on at first
+      sign-in, showing the **All Projects** context and the **Get Started**
+      section in the left-hand navigation. Crop to include enough of the top of
+      the page to show that the Administration tab is **absent** at this point,
+      because that absence is the thing step 6 explains.
+      **Referenced at:** lab 00 step 5. Replaces the stale
+      `jfrog-platform-trial-welcome-screen.png`.
+
+- [ ] `labs/00-setup/images/project-selected-tabs.png`
+      **Capture:** the top of the page immediately **after** switching into a
+      project, showing the **Platform** and **Administration** tabs now present.
+      Ideally paired with the shot above so the before and after are obvious.
+      **Why it is worth two images:** the appearance of those tabs on entering a
+      project is the single most confusing thing in lab 00, and the one an
+      attendee is most likely to read as a broken account.
+      **Referenced at:** lab 00 step 6. Not yet referenced in the text; add the
+      image link when captured.
 
 ### Later labs
 

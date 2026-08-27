@@ -174,56 +174,64 @@ sign-in page.
 
 ![The Artifactory sign-in page](images/artifactory-sign-in-page.png)
 
-Sign in with the username and password from your handout.
+Sign in with the username and password from your handout. There is no password
+change to do: the password on your handout is the one you keep.
 
-> [!IMPORTANT]
-> VERIFY: confirm the first sign-in behavior on a live trial instance. In
-> particular, whether the platform forces a password change on first sign-in
-> for a user created through the Access API, and what that dialog looks like.
-> The instruction below is written for the case where it does.
+You land in the **All Projects** view, on a Best Practices page under
+**Get Started**.
 
-If you are asked to set a new password, do it now, and **write down the new
-one**. From this point on, the new password is the one that matters, not the
-one on your handout. You will need it in step 7.
+<!-- SCREENSHOT: labs/00-setup/images/all-projects-landing.png
+     Capture: the page a freshly provisioned attendee user lands on after first
+     sign-in, showing the All Projects context and the Get Started section in
+     the left-hand navigation. Replaces the stale
+     jfrog-platform-trial-welcome-screen.png. -->
 
-Once you are in, you should see a welcome page:
+Have a quick look around, then read the next step before clicking anything else,
+because what you can see right now is **not** what you will be working with.
 
-![The JFrog Platform welcome page](images/jfrog-platform-trial-welcome-screen.png)
+### 6. Switch to your project
 
-If you land somewhere else, select **Getting Started** at the top of the
-left-hand navigation menu.
+This step matters more than it looks. Until you do it, you are in the
+**All Projects** context, and the platform shows you a deliberately reduced
+view: no **Administration** area, and only a fraction of the menu. That is not a
+permissions problem and nothing is broken. It is simply that your access is
+scoped to one project, and you have not entered it yet.
 
-Notice the **Platform** and **Administration** tabs near the top. These switch
-between the two main areas of the product:
-
-- **Platform** is day-to-day work: browsing artifacts, looking at builds,
-  reading scan results.
-- **Administration** is configuration: creating repositories, managing users,
-  setting up policies.
-
-You will move between them a lot today. When a lab says "go to Administration",
-that tab is what it means.
-
-### 6. Find your project
-
-Your project key is on your handout. Confirm you can see it.
-
-Use the project selector at the top of the left-hand navigation menu:
+Your project key is on your handout. Open the project selector at the top of the
+left-hand navigation menu:
 
 ![The project selection dropdown](images/projects-selection.png)
 
-> [!IMPORTANT]
-> VERIFY: confirm the location and behavior of the project selector in the
-> current platform UI, and confirm what an attendee assigned to exactly one
-> project sees in it.
+You will see two entries: **All Projects**, and your own project. Everyone else's
+projects are invisible to you, which is the isolation described in the Concept
+section doing its job.
 
-Select your project.
+**Select your project.**
+
+Now look at the top of the page. Two tabs have appeared that were not there a
+moment ago:
+
+- **Platform** is day-to-day work: browsing artifacts, looking at builds,
+  reading scan results.
+- **Administration** is configuration: creating repositories, managing
+  permissions, setting up policies.
+
+You will move between them constantly today. When a lab says "go to
+Administration", that tab is what it means, and if you cannot see it, **the
+first thing to check is whether you are still in All Projects.**
 
 > [!IMPORTANT]
 > Stay in your own project for the whole workshop. You share this instance with
 > everyone else in the room, and your permissions are deliberately generous so
 > that the Curation labs work later on. Generous permissions mean you *can*
 > affect other people's work. Do not.
+
+One thing you will notice is missing: there is no **Curation** entry in the
+project menu. That is expected, and it is a real characteristic of the platform
+rather than something wrong with your account. Curation does not yet support
+projects, so it is administered at the instance level instead. Lab 02 deals with
+this directly, including what it means for sharing an instance with fourteen
+other people.
 
 ### 7. Connect the JFrog CLI
 
@@ -238,9 +246,9 @@ It asks for four things:
 1. The instance URL from your handout.
 2. Your project key.
 3. How you want to authenticate. Choose **1**, username and password.
-4. Your username, then your password. **Use your current password**: if you
-   changed it in step 5, use the new one. The password is not echoed to the
-   screen as you type, which is deliberate.
+4. Your username, then your password, both exactly as they appear on your
+   handout. The password is not echoed to the screen as you type, which is
+   deliberate.
 
 The script then tests the connection and prints:
 
@@ -378,8 +386,8 @@ phone is the fastest fix. Full detail in
 - The URL has a path on the end. It should be the host only, for example
   `https://example.jfrog.io`, not `https://example.jfrog.io/ui/login`. The
   script strips a `/ui` path for you, but check it anyway.
-- You are using the handout password after having changed it in step 5. Use the
-  current one.
+- A typo in the password. It is not echoed as you type, so this is easy to do
+  and impossible to see. Just run `bash scripts/setup.sh` again.
 - You have not yet signed in to the web UI. Do step 5 before step 7, in that
   order.
 

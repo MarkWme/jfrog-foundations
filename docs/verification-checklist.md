@@ -588,44 +588,77 @@ action.
 Work lab 00 exactly as `user01`, from the handout. This is the stage that
 carries the most design risk. About thirty minutes.
 
-- [ ] **D1. First sign-in behavior.** **HIGH.**
+- [x] **D1. First sign-in behavior.** **HIGH.**
       `labs/00-setup/README.md` step 5 is written for the case where the
       platform forces a password change on first web UI sign-in for an
       API-created user.
-      **Record:** forced, or not. If not forced, step 5 simplifies and several
-      warnings about the handout password going stale can be deleted.
+      **2026-08-27: PASS. No password change is forced.** The handout password
+      stays valid. The attendee lands in the **All Projects** context on a Best
+      Practices page under **Get Started**.
+      Consequently removed: the password-change warnings from lab 00 steps 5 and
+      7, the stale hint in `scripts/setup.sh`, the connection advice in
+      `docs/troubleshooting.md`, and the "expect a password change" section of
+      `provisioning/README.md`. Each is replaced by the far likelier cause, an
+      unechoed typo.
 
-- [ ] **D2. The welcome page matches.** *MEDIUM.* Compare against
-      `labs/00-setup/images/jfrog-platform-trial-welcome-screen.png`, which
-      predates this build. Confirm **Getting Started** is where the lab says.
+- [x] **D2. The welcome page matches.** *MEDIUM.*
+      **2026-08-27: it does not.** The screenshot predates this build and the
+      landing page is different. Lab 00 step 5 is rewritten to describe what an
+      attendee actually sees, the stale image is no longer referenced, and
+      `all-projects-landing.png` is on the screenshot checklist to replace it.
+      Delete the old file once the replacement exists.
 
-- [ ] **D3. Both the Platform and Administration tabs are visible to a
+- [x] **D3. Both the Platform and Administration tabs are visible to a
       non-admin attendee.**
       **BLOCKER**, and the highest-impact item in this file after B6.
-      **If Administration is hidden:** labs 01 to 03 need restructuring, because
-      they create repositories and policies from that area. **Stop and tell me.**
+      **2026-08-27: PASS, conditionally, and the condition matters more than the
+      answer.**
 
-- [ ] **D4. The project selector.** **HIGH.** Confirm its location and
+      Both tabs appear **only once the attendee has switched into their
+      project**. In the default **All Projects** context they are absent and the
+      menu is reduced. Nothing is broken and it is not a permissions fault: the
+      account is scoped to one project and has not entered it yet.
+
+      **This found a real defect in lab 00.** Step 5 introduced the Platform and
+      Administration tabs and step 6 selected the project. In that order the tabs
+      do not exist yet, so every attendee would have hunted for something absent,
+      on first contact with the product, and reasonably concluded their account
+      was broken. Steps 5 and 6 are rewritten: sign in, switch project, then
+      introduce the tabs, with the absence explained as expected rather than left
+      to be discovered.
+
+      Also confirmed: **Curation is absent from the project menu**, consistent
+      with it not supporting projects. Lab 00 now says so briefly and points at
+      lab 02, so the gap is framed before an attendee trips over it.
+
+- [x] **D4. The project selector.** **HIGH.** Confirm its location and
       behavior, and specifically what a user assigned to exactly one project
       sees in it. Compare against `images/projects-selection.png`.
 
-      **Also pin down where the UI shows project membership.** During C4 a
-      project looked empty in the UI while the API reported the member present
-      and correctly roled. Whichever view was being read is not the one that
-      shows members, and lab 00 step 6 sends attendees to look at project
-      membership, so the lab needs the right path. Record where members actually
-      appear.
+      **2026-08-27: PASS.** The selector is in the left-hand navigation and an
+      attendee sees exactly two entries, **All Projects** and their own project.
+      Everyone else's projects are invisible, which is the isolation story
+      working. Lab 00 step 6 states that explicitly, because seeing only your own
+      project is reassuring rather than alarming once it is named.
 
-- [ ] **D5. `scripts/setup.sh` works via username and password.** **HIGH.**
+      **The membership-display question is withdrawn**, not answered. It came
+      from a misreading during C4, and no lab sends an attendee to view project
+      membership: lab 00 step 6 has them *select* a project, verified above.
+
+- [x] **D5. `scripts/setup.sh` works via username and password.** **HIGH.**
       ```bash
       bash scripts/setup.sh
       ```
       Choose option 1. Confirm it ends with "Connection confirmed."
+      **2026-08-27: PASS.**
 
-- [ ] **D6. `jf rt ping` returns OK for a project-scoped user.**
+- [x] **D6. `jf rt ping` returns OK for a project-scoped user.**
       **BLOCKER.**
       **If it needs a permission attendees do not have**, the lab 00 checkpoint
       fails for the entire room and needs replacing with a different check.
+
+      **2026-08-27: PASS.** Returns OK for a project-scoped attendee, so the
+      lab 00 checkpoint stands as written. Blocker cleared.
 
 - [ ] **D7. The project access check in `verify.sh` is meaningful.** **HIGH.**
       It calls `GET /api/repositories?project=<key>`. Run it with a **bogus**
@@ -635,23 +668,46 @@ carries the most design risk. About thirty minutes.
       moment an attendee is trying to confirm their setup. Replace it with the
       UI confirmation from lab 00 step 6.
 
-- [ ] **D8. `setup.sh` re-runs cleanly** over an existing configuration.
+      **2026-08-27: HALF DONE, and the outstanding half is the one that matters.**
+      The real project key returns
+      `[ ok ] project access   project "user01" queried successfully`, so the
+      happy path works. **The bogus key was not tried**, so whether this check
+      can ever fail is still unknown. That is precisely the shape of two bugs
+      already shipped in this repository, so it is worth closing:
+      ```bash
+      sed -i 's/^JF_PROJECT=.*/JF_PROJECT=definitely-not-a-real-project/' .env
+      bash scripts/verify.sh | grep 'project access'
+      sed -i 's/^JF_PROJECT=.*/JF_PROJECT=user01/' .env
+      ```
+      **Want:** anything other than `[ ok ]` on the bogus key.
+
+- [x] **D8. `setup.sh` re-runs cleanly** over an existing configuration.
       *MEDIUM.* It removes and re-adds rather than editing, so this should be
       safe, and attendees will do it after a typo.
+      **2026-08-27: PASS.**
 
-- [ ] **D9. `setup.sh` option 2, access token,** configures successfully.
+- [x] **D9. `setup.sh` option 2, access token,** configures successfully.
       *MEDIUM.* Not used until lab 07, but the code path exists now.
+      **2026-08-27: PASS.** Worth confirming early, since lab 07 depends on it
+      and a failure there would be misdiagnosed as a CI problem.
 
-- [ ] **D10. `.env` contains no credential.** **HIGH.**
+- [x] **D10. `.env` contains no credential.** **HIGH.**
       ```bash
       cat .env
       ```
       Only `JF_URL`, `JF_PROJECT`, `JF_SERVER_ID` and the placeholders. This is
       the property that makes displaying `.env` in front of a room safe.
+      **2026-08-27: PASS.** Contains the instance URL, the project key, the
+      server id and the two empty repository placeholders. No credential of any
+      kind. The instance URL being present is correct: `.env` is gitignored, and
+      it is the committed files that must never carry a real tenant URL.
 
-- [ ] **D11. `user01` can create a repository inside their project.** **HIGH.**
+- [x] **D11. `user01` can create a repository inside their project.** **HIGH.**
       Not a lab 00 step, but lab 01 is unwritable until this is known. Confirm
       the project key prefix is applied automatically.
+      **2026-08-27: PASS.** A remote repository was created successfully and the
+      project key prefix was applied automatically, exactly as lab 01 will
+      describe. Lab 01 can be written against this behavior.
 
 - [ ] **D12. What permission does creating a Curation policy actually need?**
       **BLOCKER**, and the largest known unknown in the whole design.
@@ -673,11 +729,20 @@ carries the most design risk. About thirty minutes.
       design. `PLAN.md` section 7 records how labs 02 and 11 should be written so
       that the switch is a small edit when it lands.
 
-- [ ] **D13. A Curation policy can be scoped to one attendee's own
+- [x] **D13. A Curation policy can be scoped to one attendee's own
       repositories.** **BLOCKER.**
-      **If a policy cannot be scoped narrowly**, one attendee's policy blocks
-      packages for the entire room, and labs 02 and 11 have to become an
-      instructor demonstration.
+      **2026-08-27: PASS on capability, with a risk that lands on lab design.**
+
+      A Curation policy **can** be scoped to a specific named repository, so the
+      isolation the workshop needs is achievable. But the UI makes it easy to
+      apply a policy to **every** repository by simply not choosing the narrow
+      option, and that is the failure that breaks the room rather than one
+      person.
+
+      So this is not a platform blocker, it is a **lab 02 requirement**: the
+      scope selection must be impossible to skip, not merely mentioned.
+      `PLAN.md` section 7 records it as a checkpointed step with an explicit
+      wrong-answer warning rather than a passing note in prose.
 
 ---
 

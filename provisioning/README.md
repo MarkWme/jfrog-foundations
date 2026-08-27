@@ -114,12 +114,16 @@ instance URL at the top of the file:
 Generated passwords avoid the characters that get misread off a printed page:
 no `i`, `l`, `o`, `0` or `1`.
 
-## Expect a password change on first sign-in
+## No password change on first sign-in
 
-The platform may require a password change when an attendee first signs in to
-the web UI. That is normal. If they change it, the new password is what
-`scripts/setup.sh` needs in lab 00, not the one on the handout. Lab 00 says so,
-but it is worth mentioning in the room.
+Verified against a live instance on 2026-08-27: the platform does **not** force a
+password change when an attendee first signs in. The password on the handout is
+the one they keep, and it is the one `scripts/setup.sh` needs in lab 00.
+
+Worth knowing because the opposite would be the most likely cause of lab 00
+failing for someone. If a future platform version starts forcing a change, lab 00
+step 5 and the connection section of `docs/troubleshooting.md` both need
+updating.
 
 ## Teardown
 

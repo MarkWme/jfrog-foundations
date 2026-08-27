@@ -37,15 +37,15 @@ example `https://example.jfrog.io`. A URL copied out of the browser address bar
 is often `https://example.jfrog.io/ui/login` or similar. `scripts/setup.sh`
 strips a `/ui` path for you, but check what it actually used.
 
-**The password changed.** If the platform made you set a new password when you
-first signed in to the web UI, the handout password is no longer valid. Use the
-current one.
+**A typo in the password.** Password entry is deliberately not echoed, so a
+mistyped character is invisible. Re-running `bash scripts/setup.sh` is safe and
+is the fastest way to rule this out.
+
+Note that there is **no** password change on first sign-in: the password on the
+handout stays valid. Verified against a live instance, 2026-08-27.
 
 **You have not signed in to the web UI yet.** Do that first, then configure the
 CLI.
-
-**A typo in a password you cannot see.** Password entry is deliberately not
-echoed. Just run `bash scripts/setup.sh` again: re-running is safe and expected.
 
 Whatever you change, re-confirm:
 

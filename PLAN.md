@@ -440,6 +440,16 @@ Projects do the work, one per attendee, keyed `user01` upward.
   attendee set the scope as an explicit, checkpointed step rather than
   mentioning it in passing, with a `> [!IMPORTANT]` callout stating what an
   unscoped policy does to the rest of the room.
+
+  **Confirmed necessary by Stage D verification (D13).** A Curation policy can
+  be scoped to a named repository, so the isolation is achievable. But the UI
+  applies a policy to **every** repository if the attendee simply does not
+  choose the narrow option, and that is the mistake that breaks the room rather
+  than one person. So this is not satisfied by a warning in prose. Lab 02 must:
+  have the attendee state which repository they scoped to as a **checkpoint**;
+  show the wrong answer as well as the right one, since recognizing "all
+  repositories" as wrong is the actual skill; and place the callout immediately
+  before the step, not at the top of the lab where it will be skimmed past.
 - The lab names the inconsistency rather than hiding it. An attendee who has
   just spent three labs inside a project boundary will notice, and explaining
   why is better than being caught.
