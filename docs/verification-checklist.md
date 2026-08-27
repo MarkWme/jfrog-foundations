@@ -447,18 +447,51 @@ Provisioning. About thirty minutes.
 - [ ] **C4. `prep.sh --count 2` creates projects and users.** **HIGH.**
       Confirms `POST /access/api/v1/projects` and `POST /access/api/v2/users`.
 
+      **Attempt 1, 2026-08-27: projects and users created, membership did not
+      take.** The script reported `role assigned (Project Admin)` for both
+      attendees and exited clean, but neither project showed the user as a
+      member. Confirmed `jf api` transmits the body correctly by pointing it at
+      a local listener and reading the raw HTTP: the PUT carried
+      `Content-Length: 27` and `{"roles":["Project Admin"]}` on the right path.
+      So the request was well formed, and the platform accepted it while
+      assigning nothing, which points at the role name.
+
+      **The script now verifies instead of trusting a status code**, see C5.
+
+      **Also noted: `user01` already existed** on this instance before the first
+      real run, so its password was deliberately not reset and the handout reads
+      `(unchanged, see previous handout)`. There is therefore no working password
+      for `user01`. **Use `user02` for Stage D**, or reset `user01` in the UI
+      first.
+
 - [ ] **C5. The project role name is correct.**
       **BLOCKER.** `provisioning/prep.sh`, `ROLE`, currently `Project Admin`.
       Taken from the platform UI, because the
       [REST API reference](https://docs.jfrog.com/projects/reference/addorupdateprojectuser)
       documents `roles` as an array of strings without listing the built-in
       names.
-      **A 400 on the role assignment step means the name is wrong.** Find the
-      correct one under the project's Members tab and re-run with `--role`.
-      **Record:** the working role name.
       **Why BLOCKER:** attendees must be able to create repositories, policies
       and watches inside their project. A role without those privileges makes
       lab 01 onward fail with permission errors that look like broken labs.
+
+      **Attempt 1, 2026-08-27: NOT CONFIRMED.** No 400 came back, but that
+      turned out to be worthless evidence: the assignment returned success and
+      no membership resulted. This item's original pass condition, "does it
+      avoid a 400", was simply the wrong test.
+
+      **The real test is now automated.** `prep.sh` validates `ROLE` against
+      `GET /access/api/v1/projects/{key}/roles` before using it and fails with
+      the actual available names, then reads the membership back from
+      `GET /access/api/v1/projects/{key}/users` afterwards. To look by hand:
+      ```bash
+      jf config add prep-check --url https://<instance> \
+        --access-token "$JF_ACCESS_TOKEN" --interactive=false
+      jf api --method GET --server-id prep-check /access/api/v1/projects/user01/roles
+      jf api --method GET --server-id prep-check /access/api/v1/projects/user01/users
+      jf config rm prep-check --quiet
+      ```
+      Flags go **before** the path, see C3.
+      **Record:** the working role name.
 
 - [ ] **C6. Re-run `prep.sh` with the same arguments.** **HIGH.**
       Every step should report "already exists" and the script should exit zero.
