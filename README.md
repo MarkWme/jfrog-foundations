@@ -44,6 +44,10 @@ Start here. It takes you from a browser to a verified working environment.
 
 **[00 - Setup](labs/00-setup/README.md)**
 
+**Part 1 is complete**: labs 00 to 03 take you from a browser to a working
+repository layout, a Curation policy that blocks a real package, and an Xray
+policy that fails a build on the findings you decided matter.
+
 You need the handout from your instructor: the instance URL, your project key,
 your username and your password.
 
@@ -63,9 +67,9 @@ your footing improves.
 | Lab | Focus | Format | Status |
 | --- | --- | --- | --- |
 | [00 - Setup](labs/00-setup/README.md) | Fork, Codespace, JFrog connection, project assignment, verification | Guided | Available |
-| 01 - Artifactory | Local, remote and virtual repositories, and how resolution works | Guided + challenge | Phase 3 |
-| 02 - Curation | Controlling what is allowed to enter from public registries | Guided + challenge | Phase 3 |
-| 03 - Xray | Policies, watches, findings and violations | Guided + challenge | Phase 3 |
+| [01 - Artifactory](labs/01-artifactory/README.md) | Local, remote and virtual repositories, and how resolution works | Guided + challenge | Available |
+| [02 - Curation](labs/02-curation/README.md) | Controlling what is allowed to enter from public registries | Guided + challenge | Available |
+| [03 - Xray](labs/03-xray/README.md) | Policies, watches, findings and violations | Guided + challenge | Available |
 
 ### Part 2: Developer experience
 

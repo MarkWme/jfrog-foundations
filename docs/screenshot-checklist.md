@@ -19,7 +19,7 @@ delete the row here.
 ![Alt text describing the image](images/github-fork-dialog.png)
 ```
 
-**Status:** build phase 1. Lab 00 only. Later phases add to it.
+**Status:** build phase 3. Labs 00 to 03. Later phases add to it.
 
 ---
 
@@ -94,9 +94,68 @@ the current UI rather than trusted.
       **Referenced at:** lab 00 step 6. Not yet referenced in the text; add the
       image link when captured.
 
+### Lab 01: Artifactory
+
+- [ ] `labs/01-artifactory/images/create-local-repo.png`
+      **Capture:** the local repository creation form, npm package type selected,
+      repository key filled in, **with the project key prefix visible**. That
+      prefix is the point of the shot: step 2 asks the attendee to notice it.
+      **Referenced at:** lab 01 step 2.
+
+- [ ] `labs/01-artifactory/images/create-virtual-repo.png`
+      **Capture:** the virtual repository form with both member repositories
+      added and **local ordered above remote**. The ordering must be legible,
+      because the lab explains it as the dependency confusion mitigation.
+      **Referenced at:** lab 01 step 4.
+
+- [ ] `labs/01-artifactory/images/remote-cache-tree.png`
+      **Capture:** the Artifacts tree with the `-npm-remote-cache` repository
+      expanded, showing the freshly fetched `ms` package. Include enough of the
+      tree that the cache repository sits alongside the three the attendee
+      created, since the surprise is that there are four.
+      **Referenced at:** lab 01 step 8.
+
+### Lab 02: Curation
+
+- [ ] `labs/02-curation/images/allow-list-condition.png`
+      **Capture:** the Allow List by License condition form with the five
+      permissive licenses entered and the attendee-prefixed name visible.
+      **Referenced at:** lab 02 step 3.
+
+- [ ] `labs/02-curation/images/policy-scope-specific.png`
+      **Capture:** the policy form with scope set to specific repositories and a
+      single attendee remote selected, **with the all-repositories option
+      visible but unselected**. Showing the wrong answer next to the right one is
+      deliberate: recognizing "all repositories" as wrong is the skill.
+      **Referenced at:** lab 02 step 4. **Highest-value shot in Part 1.**
+
+- [ ] `labs/02-curation/images/curation-audit-blocked.png`
+      **Capture:** the Curation audit view showing the blocked `highcharts`
+      request, with the policy name and the failed condition both visible.
+      **Referenced at:** lab 02 step 6.
+
+### Lab 03: Xray
+
+- [ ] `labs/03-xray/images/policy-critical-rule.png`
+      **Capture:** the security rule form, minimum severity Critical, the
+      **non-applicable findings setting enabled**, and the fail-build action.
+      The non-applicable setting must be legible: the lab turns on it.
+      **Referenced at:** lab 03 step 2.
+
+- [ ] `labs/03-xray/images/watch-with-policy.png`
+      **Capture:** the watch form with the attendee's npm repositories as
+      targets, **including the `-cache` repository**, and the policy attached.
+      **Referenced at:** lab 03 step 3.
+
+- [ ] `labs/03-xray/images/violation-lodash.png`
+      **Capture:** the violations view showing the `lodash` Critical violation,
+      with the policy name and the **Not Applicable** verdict in the same view if
+      possible. Those two facts side by side are the lab's payoff.
+      **Referenced at:** lab 03 step 5.
+
 ### Later labs
 
-Added in build phases 3 to 6, as the labs are written.
+Added in build phases 4 to 6, as the labs are written.
 
 ---
 

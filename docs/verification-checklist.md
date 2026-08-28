@@ -19,8 +19,9 @@ thing in a week as it does today. Retire an ID rather than reusing it.
 provisioning script, lab 00 and the sample application. Later build phases add
 further stages as labs land.
 
-Stages A, B, C, D and H are complete. **Stage E is the last substantive one**,
-and it is where the vulnerability set either holds up or does not.
+Stages A, B, C, D and H are complete, and Stage E is complete apart from two
+items deferred here. **Stage G covers labs 01 to 03**, added in build phase 3, and
+is the next one to walk.
 
 **How to record a result:** tick the box, and where an item says "record", write
 the answer inline. Several later decisions depend on these values.
@@ -1118,6 +1119,90 @@ where the teaching material either exists or does not.
       the attendee needs it. That vindicates leaving the versions out of the
       committed table: there is no gap to fill, and anything written down would
       only drift away from what the room is looking at.
+
+---
+
+## Stage G: labs 01 to 03
+
+Added with build phase 3. **Walk this as an attendee**, `user01`, in a Codespace,
+using the shared admin account only where lab 02 says to. Doing it as an admin
+hides exactly the failures these labs are most likely to have.
+
+Eight VERIFY flags across the three labs, plus the two items deferred from
+Stage E, which are now naturally covered here because these labs create the
+resources those items needed.
+
+- [ ] **G1. Lab 01 repository creation navigation.** **HIGH.**
+      `labs/01-artifactory/README.md` step 1. Confirm where Repositories sits in
+      the Administration menu for a project-scoped user, and what the create
+      control is called.
+
+- [ ] **G2. Set Me Up for npm.** **BLOCKER.**
+      Lab 01 step 6. Confirm where Set Me Up lives for a project-scoped user and
+      what it produces for npm. **The whole of labs 01 to 03 depends on the
+      attendee being able to resolve npm through Artifactory**, and this is the
+      only step that makes that happen. If Set Me Up is unavailable or produces
+      something other than an npm registry plus token, steps 6 to 8 of lab 01
+      need rewriting and labs 02 and 03 lose their demonstrations.
+
+- [ ] **G3. The remote cache repository appears in the Artifacts tree.**
+      *MEDIUM.* Lab 01 step 8. Confirm the `-cache` naming and that a
+      project-scoped user can see it.
+
+- [ ] **G4. Lab 02 Curation navigation and labels.** **HIGH.**
+      Lab 02 step 2. As `workshop-admin`. Confirm the path to conditions and
+      policies, and that **Allow List by License** exists as a condition
+      template.
+
+- [ ] **G5. The blocked-install message.** **HIGH, and it is a content gap
+      rather than a risk.**
+      Lab 02 step 5 currently has a VERIFY flag where the expected output should
+      be. **Capture the exact text `npm pack highcharts@8.2.0` prints when
+      Curation blocks it**, and paste it into the lab.
+      **Why it matters:** an attendee has to be able to tell a Curation block
+      from a network failure, and right now the lab cannot show them what to look
+      for. This is the single most useful thing to bring back from Stage G.
+
+- [ ] **G6. `highcharts@8.2.0` is blocked, then permitted after the waiver.**
+      **BLOCKER.** Lab 02 steps 5 and 7. This is the deferred **E5**. Confirms
+      the license mechanism works end to end and that the waiver actually lifts
+      the block, which lab 07 depends on: a still-blocked `highcharts` fails the
+      CI build three labs early.
+
+- [ ] **G7. Xray policies and watches are administrable inside a project.**
+      **BLOCKER.** Lab 03 step 1. **The largest open risk in Part 1.** Lab 03 is
+      written assuming a project-scoped attendee can create policies and watches
+      themselves. If Xray configuration turns out to be instance-level like
+      Curation, lab 03 needs the shared admin account throughout and its concept
+      section needs rewriting, because it currently contrasts Xray with Curation
+      on exactly this point.
+
+- [ ] **G8. Where violations appear for a project-scoped user.** **HIGH.**
+      Lab 03 step 5. Confirm the view, and whether a repository watch surfaces
+      violations in the same place build violations will later.
+
+- [ ] **G9. The lodash violation fires, and only with non-applicable included.**
+      **BLOCKER.** Lab 03 steps 4 to 6. This is the deferred **E6** from the
+      other direction, and it is the load-bearing check for the whole of Part 1.
+      **Confirm both states:** with non-applicable findings counted,
+      CVE-2026-4800 on `lodash 4.17.15` appears as a violation; with them
+      excluded, it does not while remaining a finding.
+      **If the violation never fires either way**, lab 03's guided path has no
+      payoff and lab 07's build never goes red.
+      **Record:** how long indexing took, since classroom pacing depends on it.
+
+- [ ] **G10. The license challenge in lab 03 flags highcharts.** *MEDIUM.*
+      Confirms the challenge solution is achievable and that `highcharts` in the
+      cache is visible to an Xray license policy after being waived through
+      Curation, which is the point the solution makes.
+
+- [ ] **G11. Documentation links resolve.** *MEDIUM.*
+      Labs 01 to 03 cite eleven JFrog documentation URLs across their challenge
+      sections. None have been checked. Open each one.
+
+- [ ] **G12. Timings.** *MEDIUM.* Record how long each lab actually took, as an
+      attendee doing it properly rather than as its author. Phase 8 needs real
+      numbers and these are the first three labs that can supply any.
 
 ---
 

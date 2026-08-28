@@ -421,9 +421,5 @@ not there, it is a permissions problem and your instructor needs to fix it.
 
 ## Next
 
-**01 - Artifactory**: local, remote and virtual repositories, and how package
-resolution actually works.
-
-> [!NOTE]
-> Lab 01 is added in build phase 3. This link becomes live then. See the
-> [module index](../../README.md#modules) for what is available now.
+[01 - Artifactory](../01-artifactory/README.md): local, remote and virtual
+repositories, and how package resolution actually works.

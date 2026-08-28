@@ -17,7 +17,7 @@ bug worth reporting, not a gap in the reader.
    multi-stage builds, GitHub Actions syntax and OIDC each get an introduction
    where they are first needed, rather than being assumed.
 
-**Status:** build phase 1. Lab 00 only. Later phases add to it.
+**Status:** build phase 3. Labs 00 to 03. Later phases add to it.
 
 ---
 
@@ -98,9 +98,148 @@ Honest notes on where this lab is thin.
 
 ---
 
+## Lab 01: Artifactory
+
+**Format:** guided plus challenge. **Prerequisites:** lab 00.
+
+### Takes as given
+
+| Assumed | Where from | Risk |
+| --- | --- | --- |
+| A working Codespace and JFrog connection | Lab 00 | Low, and lab 01 links back |
+| That `npm install` fetches packages from somewhere over the internet | Stated as assumed for the whole workshop | Low |
+| Editing a file with `sed`, or willingness to paste a command | Step 5 gives the exact command | Low |
+| Comfort clicking through a form-based admin UI | General | Low |
+
+**Not assumed:** what a repository is, what proxying means, what a cache is,
+what dependency confusion is, or anything about Docker beyond the challenge
+naming Docker Hub. The Docker challenge deliberately needs no Docker knowledge:
+it is the same three forms with a different package type.
+
+### Introduces
+
+Repository, local, remote and virtual repository, cache, package type,
+repository key, resolution, dependency confusion, Set Me Up. All defined inline
+and in the [glossary](glossary.md).
+
+### Establishes for later labs
+
+| Established | Used by |
+| --- | --- |
+| Three npm repositories with the project prefix | 02, 03, 04, 07 |
+| npm in the Codespace configured to resolve through Artifactory | 02, 03 |
+| `JF_NPM_VIRTUAL_REPO` and `JF_DOCKER_REPO` in `.env` | 07, and the CI workflows |
+| That a remote repository has a separate `-cache` repository | 03, 09, 10 |
+| The habit of checking the project selector when something is missing | All later labs |
+
+### Known gaps
+
+- **Set Me Up writes a credential into `~/.npmrc`.** The lab says so and says why
+  it is acceptable in a disposable container, but an attendee who takes that
+  pattern back to a laptop has learned something slightly wrong. Lab 07 corrects
+  it; if lab 07 is dropped for a customer, that correction is lost.
+- The lab does not explain the npm protocol or what a registry API is. It does
+  not need to, but an attendee who asks will not find the answer here.
+
+---
+
+## Lab 02: Curation
+
+**Format:** guided plus challenge. **Prerequisites:** labs 00, 01.
+
+### Takes as given
+
+| Assumed | Where from | Risk |
+| --- | --- | --- |
+| An npm remote repository exists and npm resolves through it | Lab 01 | Low, and it is a checkpoint there |
+| The attendee has the shared admin credentials | Lab 00 step 1 mentions them; the handout carries them | **Medium.** An attendee who mislaid the handout stalls here |
+| Using a private browser window | Stated in step 1 | Low |
+| That a software license is something with legal consequences | General professional knowledge | Low, and the lab does not need any specific license knowledge |
+| That "malicious packages on npm" is a real phenomenon | Named in the challenge scenario | Low. The scenario explains itself |
+
+**Not assumed:** what Curation is, how it differs from Xray, what a waiver is,
+what an allow list versus a block list implies, or what package immaturity means.
+The challenge is solvable from the concept section alone.
+
+### Introduces
+
+Curation, condition, policy, scope, allow list and block list by license,
+immature package, blocked package, waiver, decision owners.
+
+### Establishes for later labs
+
+| Established | Used by |
+| --- | --- |
+| A license Curation policy scoped to the attendee's own remote | 11 |
+| An approved waiver for `highcharts@8.2.0`, with an audit trail | 07 resolves without a block, 11 reads the record |
+| An immaturity policy from the challenge | 11 |
+| That some tasks need an admin account, and why | 11 |
+
+### Known gaps
+
+- **The blocked-install message is not yet in the lab.** It carries a VERIFY
+  flag. Until it is captured, an attendee cannot easily tell a Curation block
+  from a network failure, which is the most likely confusion in this lab.
+- **Self-approving the waiver is pedagogically awkward.** The lab names this
+  explicitly rather than hiding it, but it does mean the attendee never sees the
+  separation of duties working, only described.
+- The lab assumes the room will follow the scoping instruction. One attendee who
+  does not affects everyone, and no amount of lab text fully removes that.
+
+---
+
+## Lab 03: Xray
+
+**Format:** guided plus challenge. **Prerequisites:** labs 00, 01.
+
+Note that lab 02 is **not** a prerequisite. Xray and Curation are independent,
+and a customer who wants only one can have it.
+
+### Takes as given
+
+| Assumed | Where from | Risk |
+| --- | --- | --- |
+| npm repositories exist including a cache, and npm resolves through them | Lab 01 | Low |
+| That vulnerabilities in dependencies are a thing worth managing | General | Low |
+| Patience for asynchronous indexing | Step 4 says so explicitly | **Medium.** An impatient attendee concludes it failed |
+| That a build can be failed by an automated check | General CI familiarity | Low. Not needed until lab 07 |
+
+**Not assumed:** what a CVE or CVSS is, what a policy, rule or watch is, what
+severity means, or what Contextual Analysis does. All defined before use.
+
+### Introduces
+
+Finding, violation, policy, rule, watch, severity, CVE, CVSS, Contextual
+Analysis and all five of its verdicts, direct and transitive dependency, license
+policy.
+
+### Establishes for later labs
+
+| Established | Used by |
+| --- | --- |
+| A Critical-only security policy that counts non-applicable findings | 07, where the build fails on it |
+| A watch over the attendee's npm repositories | 07 extends it to the build |
+| The finding versus violation distinction | 07 is built on it, 10 relies on it |
+| That Contextual Analysis verdicts exist and what they mean | 05 teaches remediation using them |
+| A real violation with the attendee's own name on it | 09, 10 |
+
+### Known gaps
+
+- **The lab assumes Xray policies are administrable inside a project.** If they
+  turn out to be instance-level like Curation, the lab needs the shared admin
+  account. This carries a VERIFY flag and is the largest open risk in Part 1.
+- **Asynchronous indexing is the weakest point for classroom pacing.** If
+  indexing is slow, fifteen people are waiting with nothing to do. The Going
+  further section exists partly to absorb that.
+- The lab does not explain how Xray decides severity, beyond noting that JFrog
+  research contributes. An attendee who asks why JFrog disagrees with NVD gets a
+  pointer in Going further rather than an answer.
+
+---
+
 ## Later labs
 
-Added in build phases 3 to 6, as the labs are written.
+Added in build phases 4 to 6, as the labs are written.
 
 One thing to watch for as they land, because it is the most likely place for
 this file to go stale: **challenge labs are where an unnoticed assumption does
