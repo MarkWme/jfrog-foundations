@@ -252,7 +252,7 @@ surface) true of the application itself, not only of the base image.
 | `tar` 4.4.8 | 07, as the carrier above | |
 | `express` 4.16.0 | never | 09, 10: findings that are not violations |
 | `jsonwebtoken` 8.5.1 | never | 10: scan results, SBOM, impact analysis |
-| `highcharts` | never, waived | 02 block, 11 waiver approval |
+| `highcharts` | never. Blocked then waived, both in 02 | 02 block and waiver, 11 audit trail |
 | Base image OS packages | never | 07 reveal, 10 Xray UI |
 
 Traced end to end, no lab depends on a vulnerability an earlier lab removed.
@@ -265,12 +265,30 @@ Two consequences worth stating out loud:
   build, build image, scan image, and only then look at the image results. The
   base image findings arrive after a green build, which is the moment
   `SPEC.md` section 6.2 is asking for.
-- **`highcharts` spans labs 02 and 11.** In lab 02 the attendee's own policy
-  blocks their own install, which is an uncomfortable and instructive moment.
-  They resolve it by requesting a waiver rather than by removing the package,
-  which leaves a pending waiver request for lab 11 to approve. This
-  intentionally lets a Curation policy break `npm install` mid-workshop, and
-  is confirmed as the design. See R4.
+- **`highcharts` is blocked and waived within lab 02.** The attendee's own
+  policy blocks their own install, which is an uncomfortable and instructive
+  moment, and they resolve it with a waiver rather than by removing the package.
+
+  **Changed while writing lab 02, from the original plan of leaving the waiver
+  pending for lab 11 to approve.** Two reasons, and the first is decisive:
+
+  1. **Lab 07 would have been blocked.** `highcharts` is a direct dependency, so
+     a pending waiver leaves the CI build failing on a Curation block from lab
+     02 onward, three labs before anything is meant to resolve it. The green
+     build that section 6.2's reveal depends on would never happen.
+  2. Attendees hold the shared admin account in lab 02 anyway, so they can
+     approve it there. The lab makes the self-approval explicitly wrong,
+     names `decision_owners` as the field that separates requester from
+     approver in reality, and uses the discomfort as the teaching point.
+
+  **Lab 11 keeps its material and arguably gains.** Instead of performing an
+  approval, it reads the audit trail and waiver record the attendee created
+  three labs earlier, which is real data with their own name on it rather than
+  something manufactured for the lab. Lab 11 can then add a second waiver
+  scenario if it needs a hands-on approval.
+
+  This intentionally lets a Curation policy break `npm install` mid-workshop,
+  which is confirmed as the design. See R4.
 
 ---
 
