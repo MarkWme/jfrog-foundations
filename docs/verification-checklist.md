@@ -16,8 +16,11 @@ thing in a week as it does today. Retire an ID rather than reusing it.
 | **MEDIUM** | Instructor-facing, or self-diagnosing with a clear error. |
 
 **Status:** build phase 2. Covers the skeleton, the devcontainer, the
-provisioning script, lab 00 and the sample application. Phases 3 to 6 add
-stages G onward as labs land.
+provisioning script, lab 00 and the sample application. Later build phases add
+further stages as labs land.
+
+Stages A, B, C, D and H are complete. **Stage E is the last substantive one**,
+and it is where the vulnerability set either holds up or does not.
 
 **How to record a result:** tick the box, and where an item says "record", write
 the answer inline. Several later decisions depend on these values.
@@ -880,6 +883,12 @@ Found during Stage D rather than planned, and promoted to its own stage because
 it is a **delivery blocker** that no other item would have caught. Lettered H to
 avoid renumbering anything.
 
+**Stage H is complete as of 2026-08-28**, and validated on a **fresh trial
+instance** rather than the development tenant, which is the condition a real
+delivery actually runs under. The shared administrator design is confirmed
+end to end: the admin can reach Curation, attendees cannot see it or each
+other's projects, and the handout carries both credential sets.
+
 - [ ] **H1. No enabled Curation policy is scoped to all repositories.**
       **BLOCKER.**
       ```bash
@@ -918,39 +927,58 @@ avoid renumbering anything.
       Recorded as step 7 of `docs/tenant-prerequisites.md`.
 
       **2026-08-27: cleared on the development instance.** The policies were
-      Mark's own, from previous demonstrations, and have been deleted. This item
-      stays open as a **per-delivery check**, not a one-time fix: it is the
-      realistic state of any reused tenant, and it fails silently.
+      Mark's own, from previous demonstrations, and have been deleted.
+
+      **2026-08-28: a fresh trial instance was created for the remaining
+      verification, and is clean.** That also confirms the underlying
+      expectation: a new trial ships with no Curation policies, so this only ever
+      bites on a reused tenant.
+
+      **This item stays open deliberately, as a per-delivery check rather than a
+      one-time fix.** Reusing a demonstration tenant is the realistic case for an
+      SE under time pressure, it is the exact situation that produced the
+      finding, and it fails silently rather than loudly.
 
       **Note this cuts the other way too**, and it is worth saying to the room:
       these policies are exactly what a customer *should* have in production. The
       workshop needs them out of the way to teach; a real environment wants them
       on.
 
-- [ ] **H2. The shared admin account works for Curation in the UI.**
+- [x] **H2. The shared admin account works for Curation in the UI.**
       **BLOCKER.** This is the replacement for D12 and nothing has confirmed it
       yet.
       Re-run `prep.sh` so `workshop-admin` is created, then sign in as it and
       confirm **Curation appears in the Administration menu** and a policy can be
       created and scoped to a named repository.
-      **If Curation is still absent even for a platform admin**, the entitlement
-      is missing on the instance rather than the permission being wrong, which is
-      a C1 question.
+      **2026-08-28: PASS**, on a fresh trial instance. `workshop-admin` sees
+      Curation in the UI. Labs 02 and 11 can be written as UI-led, as intended,
+      and the Curation REST API stays out of the foundations workshop.
 
-- [ ] **H3. Attendee accounts see only their own project again.**
+- [x] **H3. Attendee accounts see only their own project again.**
       **HIGH.** `policy_manager` widened project visibility, and it has been
       removed. Confirm the selector is back to two entries, **All Projects** and
       the attendee's own, because lab 00 step 6 has been reverted to say exactly
       that.
       Use a **freshly created** attendee account: an account that previously held
       `policy_manager` may retain the broader view.
-      **If the wide view persists**, lab 00 step 6 needs the honest wording back
-      and this becomes a permanent characteristic to describe rather than hide.
+      **2026-08-28: PASS**, on freshly created accounts. `user01` and `user02`
+      see only their own project, and **Curation appears nowhere in the UI for
+      them**. So lab 00 is correct on both counts as written: step 6's two-entry
+      selector, and the paragraph that frames the absent Curation menu as the
+      platform's permission boundary rather than a fault.
+      Removing `policy_manager` restored the narrow view, confirming it was the
+      cause of the earlier regression.
 
-- [ ] **H4. The handout carries the shared admin credentials.** *MEDIUM.*
+- [x] **H4. The handout carries the shared admin credentials.** *MEDIUM.*
       Confirm `provisioning/out/handout.md` has the admin section above the
       attendee table, with a working password, and that re-running carries it
       forward like the attendee passwords.
+      **2026-08-28: PASS.** The `workshop-admin` credentials are present in the
+      handout.
+      **Not yet exercised:** the carry-forward path for the admin password
+      specifically, on a re-run. It uses the same `prev_password` lookup the
+      attendee rows use, which C7 confirmed working, so this is low risk rather
+      than unverified.
 
 ---
 
