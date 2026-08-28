@@ -984,51 +984,140 @@ other's projects, and the handout carries both credential sets.
 
 ## Stage E: the vulnerability set
 
+**E1, E2, E3, E4 and E7 pass as of 2026-08-28, on a fresh trial instance.** The
+vulnerability set holds up. **E5 and E6 are deferred to build phase 3** by
+agreement: both are really "does the lab design work" rather than "does the
+platform do this", and both need repositories, policies and watches that phase 3
+creates properly while writing labs 01 to 03. Building them by hand now would
+duplicate that work.
+
+Two corrections and two additions came out of this pass, recorded against the
+items below and applied to `apps/node-dashboard/README.md` and `PLAN.md`.
+
 Needs stage B for the built image and stage D for a working connection. This is
 where the teaching material either exists or does not.
 
-- [ ] **E1. `jf audit` on the sample application matches the documented set.**
+- [x] **E1. `jf audit` on the sample application matches the documented set.**
       **HIGH.** Compare against the dependency table in
       `apps/node-dashboard/README.md`. Exact CVE lists will differ, since new
       advisories land against old versions constantly and the Catalog truncates
       at ten per package. What matters is that the **highest severity per
       package** still matches.
-      **Record:** any package whose highest severity has changed.
+      **2026-08-28: PASS.** Every package in the table is present at the
+      documented highest severity. `axios` and `lodash` Critical, `tar`,
+      `moment` and `jsonwebtoken` High, `node-fetch` and `express` Medium.
 
-- [ ] **E2. `minimist` appears as a transitive Critical**, attributed through
+      **Two corrections to the documented set, both now applied.**
+
+      **`highcharts` does have a CVE.** CVE-2021-29489, Medium. The table said
+      "None. License only". Harmless to the design, since a Medium does not
+      violate the Critical-only policy and the license remains the reason
+      Curation blocks it, but the answer key was wrong and is fixed.
+
+      **The hardcoded `JWT_SECRET` is not a secrets finding.** `jf audit` reports
+      "No secrets were found", correctly: the value is an obvious placeholder.
+      The app README claimed it would give the secrets scanner something to say,
+      and that claim is removed rather than left to mislead an instructor.
+
+      **Two additions, both unplanned and both useful.**
+
+      **SAST found two real findings in the workshop's own code**, both Low:
+      `src/app.js:79` for missing Express security middleware, and
+      `src/app.js:71` for `jwt.verify` being called without an `algorithms`
+      option, which would accept a forged `alg: none` token. Both are staying.
+      Findings in code the attendee can open and reason about are better lab 05
+      material than any dependency CVE.
+
+      **Contextual Analysis verdicts have a direct bearing on the lab 03 policy.**
+      See E2, and `PLAN.md` section 3, which now carries the full table. This is
+      the most consequential result of the whole verification pass.
+
+- [x] **E2. `minimist` appears as a transitive Critical**, attributed through
       `tar` to `mkdirp`. **BLOCKER.** Confirms B6 from the platform's own point
       of view rather than npm's.
 
-- [ ] **E3. The built image produces base image findings.** **HIGH.**
-      Scan `node-dashboard:dev`. High or critical severity is **not** required.
+      **2026-08-28: PASS, with a design consequence that matters more than the
+      pass itself.** `jf audit` attributes it exactly as designed:
+      `CVE-2021-44906 | Critical | DIRECT DEPENDENCY: tar 4.4.8 | AFFECTED
+      COMPONENT: minimist 1.2.5`. The two-hop trace lab 07 is built on is real
+      and visible in the tool's own output.
 
-- [ ] **E4. Base image findings are attributable to Debian packages, not npm
+      **But its Contextual Analysis verdict is `Not Applicable`.** So are the
+      Criticals on `lodash` and `axios`. **Not one Critical in the application is
+      marked Applicable**: three are Not Applicable, two are Missing Context.
+
+      **If the lab 03 policy skips non-applicable findings, no Critical violates
+      anything and lab 07 never goes red.** The entire remediation ledger depends
+      on the policy counting them. So lab 03 has to create its policy explicitly
+      including non-applicable findings, and explain why, which turns out to be
+      section 6.2's findings-versus-violations lesson arriving a lab early.
+      Recorded in `PLAN.md` section 3, and flagged on E6.
+
+- [x] **E3. The built image produces base image findings.** **HIGH.**
+      Scan `node-dashboard:dev`. High or critical severity is **not** required.
+      **2026-08-28: PASS**, emphatically. The scan produced more output than the
+      terminal would hold, across Debian OS packages and npm components alike.
+
+- [x] **E4. Base image findings are attributable to Debian packages, not npm
       packages.**
       **BLOCKER.** This is the property lab 07's entire payoff rests on: when
       the attendee looks at the results, the source of each finding must be
       unambiguous.
       **If the set is too thin or the provenance is muddy:** fall back to
       non-slim `node:16.20.2-bullseye`, then a `buster` tag.
-      **Record:** roughly how many findings, and whether the component type
-      makes the origin obvious at a glance.
+      **2026-08-28: PASS, and better than the design required.** The scan output
+      carries a `TYPE` column reading `Debian` or `Oci`, so origin is obvious
+      without interpretation. Findings separate into **three** groups, not two:
+
+      | Group | Type | Examples |
+      | --- | --- | --- |
+      | Operating system | `Debian` | `debian:bullseye:libc6`, `libgnutls30`, `perl-base`, `apt` |
+      | Base image tooling | `Oci` | `pacote`, `minimatch`, `brace-expansion`, `tar@6.1.11` |
+      | Application | `Oci` | `axios@0.21.0`, `tar@4.4.8`, `lodash@4.17.15` |
+
+      The third group was not anticipated: the base image contributes findings
+      through its bundled npm as well as its OS packages, so it makes the lab 07
+      point twice by different routes. **The slim tag stays**; the fallback to
+      non-slim or `buster` is not needed.
+
+      **One trap for lab 07, now recorded in `PLAN.md`:** `tar` and `semver` each
+      appear twice at different versions. `tar@4.4.8` is the attendee's,
+      `tar@6.1.11` is the base image's npm. An attendee who has just fixed `tar`
+      and then sees `tar` in the image scan will conclude their fix failed. Lab
+      07 must call this out and use it to introduce reading the layer digest.
 
 - [ ] **E5. `highcharts@8.2.0` is blocked by a license-based Curation policy.**
       **BLOCKER.** The Catalog reports its license as
       `LicenseRef-jfrog-highcharts`, a non-OSI reference.
-      **If it is not blocked:** it is the only non-CVE finding in the
-      application, and without it the Curation labs are a duplicate of the Xray
-      labs. A different license-tripping package is needed.
+      **If it is not blocked:** it is the reason the Curation labs are not a
+      duplicate of the Xray labs. A different license-tripping package would be
+      needed.
+
+      **DEFERRED to build phase 3, 2026-08-28.** Needs an npm remote repository
+      and a license-based Curation policy scoped to it, which is labs 01 and 02
+      built by hand. Phase 3 creates those properly while writing the labs, so
+      this is verified there rather than duplicated now.
 
 - [ ] **E6. A Critical-only Xray policy leaves `express` and `jsonwebtoken` as
       findings that are not violations.** **HIGH.**
       This is what makes lab 07's "scan surface is wider than enforcement
       surface" point true of the application itself, not only of the base image.
 
-- [ ] **E7. Record the recommended fix versions.** *MEDIUM.*
+      **DEFERRED to build phase 3, 2026-08-28.** Needs an Xray policy and a
+      watch, which lab 03 creates. Note the E2 finding when it is picked up: the
+      policy has to include non-applicable findings or nothing violates at all.
+
+- [x] **E7. Record the recommended fix versions.** *MEDIUM.*
       Run `jf audit` and note what it recommends per package, for the
       instructor's own reference. The dependency table deliberately does not
       hardcode these, because they go stale between deliveries and would then
       contradict the tool in front of the room.
+
+      **2026-08-28: PASS.** `jf audit` prints a `FIXED VERSIONS` column per
+      finding, so the recommendation is in the tool's own output at the moment
+      the attendee needs it. That vindicates leaving the versions out of the
+      committed table: there is no gap to fill, and anything written down would
+      only drift away from what the room is looking at.
 
 ---
 

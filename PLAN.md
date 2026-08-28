@@ -191,6 +191,49 @@ it belongs in a status dashboard without contrivance. `request@2.88.0`
 used in lab 06 as a package the attendee evaluates but never installs, since
 an unmaintained-package condition catches it on age rather than license.
 
+### Contextual Analysis changes what the lab 03 policy has to say
+
+**Found during Stage E verification, 2026-08-28, and the most consequential
+result of that pass.** `jf audit` reports a Contextual Analysis verdict per
+finding, and against this dependency set they fall out like this:
+
+| Severity | Package | CVE | Verdict |
+| --- | --- | --- | --- |
+| Critical | `axios` | CVE-2026-42043 | Missing Context |
+| Critical | `axios` | CVE-2025-62718 | Missing Context |
+| Critical | `axios` | CVE-2024-57965 | **Not Applicable** |
+| Critical | `lodash` | CVE-2026-4800 | **Not Applicable** |
+| Critical | `minimist` via `tar` | CVE-2021-44906 | **Not Applicable** |
+| High | `axios` | CVE-2026-42039 | Applicable |
+| High | `jsonwebtoken` | CVE-2022-23539, CVE-2022-23540 | Applicable |
+| High | `moment` | CVE-2022-31129 | Applicable |
+
+**Not one Critical is Applicable.** Three are Not Applicable, and that includes
+`minimist`, the finding lab 07's central exercise is built on.
+
+**Consequence.** If the lab 03 policy skips non-applicable findings, which is a
+reasonable thing for a customer to want, then **no Critical violates anything**,
+the lab 07 build never goes red, and the trace exercise has nothing to trace. The
+remediation ledger below depends on the policy counting non-applicable findings.
+
+**So lab 03 must create its policy explicitly including non-applicable
+findings**, and say why in the lab text rather than leaving it as a setting
+nobody looks at. That is not a workaround: it is section 6.2's second point
+arriving a lab earlier than planned. What a scan finds and what a policy enforces
+are two different surfaces, and applicability is one of the dials between them.
+
+**This is a gift to lab 05 as much as a constraint on lab 03.** Lab 05 already
+has `lodash` as its guided IDE remediation with Contextual Analysis as the
+teaching point. A Critical marked Not Applicable is the ideal case for that: the
+attendee sees the severity, sees the verdict, and has to reason rather than
+reflexively upgrade. Confirmed available rather than hoped for.
+
+**Also worth knowing:** five verdicts appear in the output, not two.
+`Applicable`, `Not Applicable`, `Missing Context`, `Undetermined` and
+`Not Covered` all occur. Lab 05 has to define them, because an attendee who reads
+anything other than `Applicable` as "safe to ignore" has learned the wrong
+lesson.
+
 ### The remediation ledger
 
 Xray policy configured in lab 03 fails on **Critical only**, direct and
@@ -332,12 +375,33 @@ pinned Debian 11 tag on an end-of-life Node line gives a credible set of
 findings in Debian packages (`glibc`, `openssl`, `zlib`, `perl-base` and
 similar), and critically those findings appear in Xray as **Debian package
 components, not npm components**, which is the unambiguous provenance
-`SPEC.md` section 6.2 says actually matters. Verify in Phase 2.
+`SPEC.md` section 6.2 says actually matters.
 
-Fallback if Phase 2 measurement shows the finding set is too thin: move to
-non-slim `node:16.20.2-bullseye`, then to a `buster` tag. Slim is the starting
-point because the image must build in under two minutes in a Codespace, and I
-would rather start inside that budget and add findings than start outside it.
+**Confirmed by Stage E verification, 2026-08-28, and more cleanly than
+expected.** The scan output carries a `TYPE` column, and findings separate into
+**three** groups rather than two, each identifiable by type and by layer digest:
+
+| Group | Type | Example components | Origin |
+| --- | --- | --- | --- |
+| Operating system | `Debian` | `debian:bullseye:libc6`, `libgnutls30`, `perl-base`, `apt`, `util-linux` | The base image's Debian layer |
+| Base image tooling | `Oci` | `pacote`, `minimatch`, `brace-expansion`, `diff`, `ip`, `tar@6.1.11`, `semver@7.3.7` | npm's own bundled dependencies, shipped inside `node:16` |
+| Application | `Oci` | `axios@0.21.0`, `tar@4.4.8`, `lodash@4.17.15`, `moment@2.29.1`, `qs@6.5.1` | The attendee's `node_modules` |
+
+The `Debian` versus `Oci` split does the heavy lifting and needs no explanation,
+which is what section 6.2 asked for. The third group is a bonus the plan did not
+anticipate: the base image contributes findings through **both** its OS packages
+and its bundled Node tooling, which makes the same point twice by different
+routes. The slim tag is therefore staying; no fallback to non-slim or `buster` is
+needed.
+
+> [!IMPORTANT]
+> **One trap for lab 07 to defuse.** `tar` and `semver` each appear **twice**, at
+> different versions and in different layers. `tar@4.4.8` and `semver@5.7.1` are
+> the attendee's; `tar@6.1.11` and `semver@7.3.7` belong to the npm shipped
+> inside the base image. An attendee who has just fixed `tar` and then sees `tar`
+> in the image scan will reasonably conclude their fix did not work. Lab 07 has
+> to call this out, and it is a natural moment to introduce reading the layer
+> digest rather than the package name alone.
 
 ---
 

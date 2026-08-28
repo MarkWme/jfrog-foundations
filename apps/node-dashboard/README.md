@@ -60,10 +60,14 @@ All optional. The defaults work offline.
 | `UPSTREAM_TIMEOUT_MS` | `1500` | |
 | `JWT_SECRET` | a placeholder | See the note below |
 
-`src/app.js` falls back to a hardcoded `JWT_SECRET` so the token routes work
-out of the box. **It is not a real credential**, and it is left in place partly
-because it is a realistic finding for the secrets scanning in labs 05 and 07 to
-have something to say about. It is not a pattern to copy.
+`src/app.js` falls back to a hardcoded `JWT_SECRET` so the token routes work out
+of the box. **It is not a real credential** and it is not a pattern to copy.
+
+An earlier version of this file claimed it would also give the secrets scanner
+something to find. **It does not.** Verified on 2026-08-28: `jf audit` reports
+"No secrets were found", correctly, because the value is an obvious placeholder
+rather than anything resembling a real key. The labs get no secrets-detection
+material from this application, and should not pretend otherwise.
 
 ---
 
@@ -94,7 +98,28 @@ at build time.
 | `jsonwebtoken` | 8.5.1 | CVE-2022-23539, CVE-2022-23540, CVE-2022-23541 | High | Direct | **Never.** Kept for lab 10 |
 | `node-fetch` | 2.6.0 | CVE-2020-15168, CVE-2022-0235 | Medium | Direct | **Lab 04**, challenge |
 | `express` | 4.16.0 | CVE-2024-29041, CVE-2024-43796 | Medium | Direct | **Never.** Kept for labs 09 and 10 |
-| `highcharts` | 8.2.0 | None. License `LicenseRef-jfrog-highcharts` | n/a | Direct | **Never.** Blocked by Curation in lab 02, waived in lab 11 |
+| `highcharts` | 8.2.0 | CVE-2021-29489. License `LicenseRef-jfrog-highcharts` | Medium | Direct | **Never.** Blocked by Curation in lab 02, waived in lab 11 |
+
+### Static analysis findings
+
+Not planned, and found during verification on 2026-08-28. `jf audit` reports two
+SAST findings, both genuine and both in code written for this workshop:
+
+| Severity | Location | Finding |
+| --- | --- | --- |
+| Low | `src/app.js:79` | Express application lacks security middleware |
+| Low | `src/app.js:71` | JWT signed with the `none` algorithm, or verified without an allowed-algorithms list, allowing token forgery |
+
+The second one is real: `requireToken` calls `jwt.verify` without an
+`algorithms` option, so a forged token claiming `alg: none` would be accepted.
+That is a textbook JWT mistake and it is exactly the kind of thing SAST exists
+to catch.
+
+**Leave both in place.** Lab 05 covers SAST, and having findings that are the
+attendee's own application code rather than a library is more instructive than
+any dependency CVE: it is a bug you could have written, in a file you can open,
+with a fix you can reason about. The dependency table above is about other
+people's code; this is about yours.
 
 ### Why some findings are never fixed
 
@@ -105,8 +130,11 @@ material. The set above is therefore layered on purpose:
   findings to explore. They also demonstrate the distinction that matters most
   in the workshop: the Xray policy configured in lab 03 fails on **Critical
   only**, so these are **findings that are not violations**.
-- `highcharts` carries no CVE at all. It trips Curation on **license** grounds,
-  which is what stops the Curation labs from being a duplicate of the Xray labs.
+- `highcharts` is in the set for its **license**, not its CVE, and that is what
+  stops the Curation labs from being a duplicate of the Xray labs. It does carry
+  one Medium CVE, CVE-2021-29489, found during verification and not planned. That
+  is harmless: a Medium does not violate the Critical-only policy, so the license
+  remains the reason Curation blocks it.
 - The **container base image** is never remediated. See below.
 
 The full sequence, and the reasoning behind the ordering, is in
