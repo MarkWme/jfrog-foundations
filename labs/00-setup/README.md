@@ -239,8 +239,8 @@ so a project-scoped account like yours cannot reach it at all. That is why your
 handout also carries a shared administrator account: lab 02 has you sign in as
 that account to work with Curation, and back as yourself afterwards.
 
-Two things worth taking from that, both of which matter more than the
-inconvenience:
+There are two useful things in that, and they both matter more than the
+inconvenience does:
 
 - **This is what platform access control looks like from the inside.** Your
   account can do a great deal inside your project and nothing outside it. Being

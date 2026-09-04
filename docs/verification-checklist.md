@@ -1132,22 +1132,32 @@ Eight VERIFY flags across the three labs, plus the two items deferred from
 Stage E, which are now naturally covered here because these labs create the
 resources those items needed.
 
-- [ ] **G1. Lab 01 repository creation navigation.** **HIGH.**
-      `labs/01-artifactory/README.md` step 1. Confirm where Repositories sits in
-      the Administration menu for a project-scoped user, and what the create
-      control is called.
+- [x] **G1. Lab 01 repository creation navigation.** **HIGH.**
+      **2026-09-04: PASS.** Walked end to end and the lab was rewritten against
+      what is actually on screen, including the real button names: "Create a
+      Repository", "Create Local Repository", and the "I will do it later"
+      button on the confirmation dialog. All three VERIFY flags in lab 01 are
+      removed as a result.
 
-- [ ] **G2. Set Me Up for npm.** **BLOCKER.**
-      Lab 01 step 6. Confirm where Set Me Up lives for a project-scoped user and
-      what it produces for npm. **The whole of labs 01 to 03 depends on the
-      attendee being able to resolve npm through Artifactory**, and this is the
-      only step that makes that happen. If Set Me Up is unavailable or produces
-      something other than an npm registry plus token, steps 6 to 8 of lab 01
-      need rewriting and labs 02 and 03 lose their demonstrations.
+- [x] **G2. Set Me Up for npm.** **BLOCKER, now cleared.**
+      **2026-09-04: PASS**, and the flow is more involved than the lab
+      originally assumed. Set Me Up sits next to "Create a Repository" at the
+      top of the Repositories page. It asks for a package type, then a
+      repository, then generates a token from the account password, and finally
+      produces per-client instructions. The attendee uses the "npm login
+      (Unscoped)" section: an `npm config set registry` command, followed by
+      `npm login --auth-type=web` and a browser approval. Lab 01 step 6 now
+      walks all of that click by click.
 
-- [ ] **G3. The remote cache repository appears in the Artifacts tree.**
-      *MEDIUM.* Lab 01 step 8. Confirm the `-cache` naming and that a
-      project-scoped user can see it.
+- [x] **G3. The remote cache repository appears in the Artifacts tree.**
+      *MEDIUM.* **2026-09-04: PASS.** The `-npm-remote-cache` repository is
+      visible to a project-scoped user and the fetched `ms` package is inside
+      it.
+
+- [ ] **G3a. Lab 01 screenshots.** *MEDIUM.*
+      Lab 01 is otherwise complete and reviewed. The three screenshots in
+      [`screenshot-checklist.md`](screenshot-checklist.md) are the only
+      outstanding item on it.
 
 - [ ] **G4. Lab 02 Curation navigation and labels.** **HIGH.**
       Lab 02 step 2. As `workshop-admin`. Confirm the path to conditions and
