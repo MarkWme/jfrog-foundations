@@ -110,29 +110,30 @@ Beneath that, you will see a section labeled "Default Deployment Repository". Th
 
 <!-- SCREENSHOT: labs/01-artifactory/images/create-virtual-repo.png
      Capture: the virtual repository creation form with both the local and
-     remote repositories added to the included list, local ordered first. -->
+     remote repositories moved into the Selected Repositories column, and the
+     Default Deployment Repository set to the local repository. -->
 
 
 Finally, click the "Create Virtual Repository" button at the bottom right of the screen, and again you can dismiss the confirmation dialog by clicking the "I'll Do It Later" button.
 
-### 5. Record the names
+### 5. Check the repository names
 
-To save you having to retype the same thing over and over again during the workshop, you can run the following in the Codespaces terminal. This will save the details of the repositories as environment variables in the  `.env` file.
+To save you retyping the same thing over and over again during the workshop, the names of your repositories are held as environment variables in the `.env` file. You don't have to do anything to set that up. This lab tells you exactly what to type for each repository key and the platform adds your project key in front, so the full names were already worked out for you when you ran `scripts/setup.sh` back in lab 00.
+
+Let's just confirm they are there. In the Codespaces terminal:
 
 ```bash
 cd /workspaces/jfrog-foundations
-sed -i "s|^JF_NPM_VIRTUAL_REPO=.*|JF_NPM_VIRTUAL_REPO=${JF_PROJECT}-npm-virtual|" .env
-grep JF_NPM .env
+grep JF_NPM_VIRTUAL_REPO .env
 ```
 
-Expected:
+You should see your own project key in front of the name:
 
 ```
 JF_NPM_VIRTUAL_REPO=user01-npm-virtual
 ```
 
-If `${JF_PROJECT}` came out empty, `.env` has not been loaded into this shell.
-Run `set -a; . ./.env; set +a` and try again.
+If that line is empty, or the project key is missing so that it just reads `-npm-virtual`, run `bash scripts/setup.sh` again and it will fill it in.
 
 ### 6. Point npm at your virtual repository
 
@@ -250,7 +251,7 @@ Your platform team is about to start publishing container images from CI, and th
 
 - Three Docker repositories exist in your project, prefixed with your project key.
 - The virtual one aggregates the other two
-- You can say which of the three a CI pipeline should push to, which it should pull from.
+- You can explain how a virtual repository handles both a push and a pull, and what the "Default Deployment Repository" setting is there for.
 - `JF_DOCKER_REPO` in `.env` names the repository a pipeline would use.
 
 **Documentation**
@@ -273,12 +274,11 @@ We need to follow exactly the same three steps as we did for npm earlier, but th
 
 3. **Virtual.** Create a repository, type **Virtual**, package type **Docker**, key `docker-virtual`. Add `userxx-docker-local` and `userxx-docker-remote`. Set `userxx-docker-local` as the default deployment repository.
 
-Then record it:
+The name is already in your `.env` file, for the same reason the npm one was. Confirm it:
 
 ```bash
 cd /workspaces/jfrog-foundations
-sed -i "s|^JF_DOCKER_REPO=.*|JF_DOCKER_REPO=${JF_PROJECT}-docker-virtual|" .env
-grep JF_DOCKER .env
+grep JF_DOCKER_REPO .env
 ```
 
 A pipeline pushes **and** pulls through a virtual repository. The virtual repository will automatically direct the request to either a local repository if it's a push request, or either a local or remote if it's a pull request. Which one depends on the package name. This allows us to have packages in our local repositories with the same name as packages in a remote repository, but ensure that any local version is selected ahead of a remote version with the same name.

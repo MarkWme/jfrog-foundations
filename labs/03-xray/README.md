@@ -309,9 +309,9 @@ way into a build. They have asked whether the tooling can tell them.
 
 **Documentation**
 
-- [Creating Xray policies](https://jfrog.com/help/r/jfrog-security-user-guide/products/jfrog-xray/manage-xray/policies)
-- [Creating Xray watches](https://jfrog.com/help/r/jfrog-security-user-guide/products/jfrog-xray/manage-xray/watches)
-- [License compliance](https://jfrog.com/help/r/jfrog-security-documentation/managing-compliance-licenses)
+- [Create Policies](https://docs.jfrog.com/security/docs/create-policies-1)
+- [Create Watches](https://docs.jfrog.com/security/docs/create-watches)
+- [License Compliance](https://docs.jfrog.com/security/docs/legal)
 
 **Timebox: 15 minutes.**
 

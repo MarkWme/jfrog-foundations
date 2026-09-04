@@ -768,7 +768,7 @@ carries the most design risk. About thirty minutes.
         click paths, which is a real change but a workable one.
       - **403** means `policy_manager` is not sufficient, and the next candidate
         is platform admin, with all the cost recorded in R1.
-      https://jfrog.com/help/r/jfrog-rest-apis/list-curation-policies
+      https://docs.jfrog.com/security/reference/listpolicies
 
       Also worth capturing: what the `curation` line from `prep.sh` said for each
       attendee. It reads the `policy_manager` flag back from

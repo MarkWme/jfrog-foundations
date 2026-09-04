@@ -108,19 +108,23 @@ Honest notes on where this lab is thin.
 | --- | --- | --- |
 | A working Codespace and JFrog connection | Lab 00 | Low, and lab 01 links back |
 | That `npm install` fetches packages from somewhere over the internet | Stated as assumed for the whole workshop | Low |
-| Editing a file with `sed`, or willingness to paste a command | Step 5 gives the exact command | Low |
 | Comfort clicking through a form-based admin UI | General | Low |
+| That an `npm login` flow opening a browser tab is normal | Step 6 walks it through click by click | Low |
 
-**Not assumed:** what a repository is, what proxying means, what a cache is,
-what dependency confusion is, or anything about Docker beyond the challenge
-naming Docker Hub. The Docker challenge deliberately needs no Docker knowledge:
-it is the same three forms with a different package type.
+**Not assumed:** what a repository is, what proxying means, what a cache is, or
+anything about Docker beyond the challenge naming Docker Hub. The Docker
+challenge deliberately needs no Docker knowledge: it is the same three forms
+with a different package type.
+
+Note that step 5 no longer asks the attendee to edit `.env`. The repository names
+are derived by `scripts/setup.sh` in lab 00, so step 5 is a check rather than an
+edit, and it assumes nothing beyond running `grep`.
 
 ### Introduces
 
 Repository, local, remote and virtual repository, cache, package type,
-repository key, resolution, dependency confusion, Set Me Up. All defined inline
-and in the [glossary](glossary.md).
+repository key, resolution, default deployment repository, Set Me Up. All
+defined inline and in the [glossary](glossary.md).
 
 ### Establishes for later labs
 

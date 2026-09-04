@@ -116,8 +116,10 @@ rather than the public registry.
 **Dependency confusion**
 An attack where someone publishes a public package using the same name as one of
 your internal packages, hoping a build resolves theirs instead of yours.
-Ordering local repositories before remote ones inside a virtual repository is the
-mitigation.
+Resolving through a virtual repository is what protects you: Artifactory always
+searches local repositories first, then the remote cache, and only then requests
+the artifact from the remote upstream, so a local package of the same name always
+wins. You do not have to order the members by hand to get that behavior.
 
 **Set Me Up**
 The UI action that generates the configuration a package manager needs to

@@ -249,6 +249,17 @@ set_env_var "JF_URL" "${url}"
 set_env_var "JF_PROJECT" "${project}"
 set_env_var "JF_SERVER_ID" "${SERVER_ID}"
 
+# Repository names are derived here rather than recorded by hand in lab 01.
+#
+# Lab 01 tells the attendee exactly what to type for each repository key, and
+# the platform applies the project key prefix, so both names are fully
+# determined the moment we know the project key. Having lab 01 write them with
+# a sed command depended on .env already being sourced in that shell, which it
+# frequently is not. The result was JF_NPM_VIRTUAL_REPO=-npm-virtual, missing
+# the project key, with nothing on screen to say anything had gone wrong.
+set_env_var "JF_NPM_VIRTUAL_REPO" "${project}-npm-virtual"
+set_env_var "JF_DOCKER_REPO" "${project}-docker-virtual"
+
 echo ""
 echo "=============================================================="
 echo "  Setup complete"
@@ -257,6 +268,12 @@ echo ""
 echo "  Instance:  ${url}"
 echo "  Project:   ${project}"
 echo "  Server ID: ${SERVER_ID}"
+echo ""
+echo "  Repository names for later labs, worked out from your project key:"
+echo "    npm:     ${project}-npm-virtual"
+echo "    docker:  ${project}-docker-virtual"
+echo ""
+echo "  You create those repositories yourself in lab 01."
 echo ""
 echo "  Written to .env, which is gitignored. Your credential is held"
 echo "  by the JFrog CLI and was not written to .env."

@@ -104,8 +104,9 @@ the current UI rather than trusted.
 
 - [ ] `labs/01-artifactory/images/create-virtual-repo.png`
       **Capture:** the virtual repository form with both member repositories
-      added and **local ordered above remote**. The ordering must be legible,
-      because the lab explains it as the dependency confusion mitigation.
+      moved into the **Selected Repositories** column, and the **Default
+      Deployment Repository** set to the local repository. That second setting
+      must be legible: it is the one the challenge asks about.
       **Referenced at:** lab 01 step 4.
 
 - [ ] `labs/01-artifactory/images/remote-cache-tree.png`
