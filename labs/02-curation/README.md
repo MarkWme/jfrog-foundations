@@ -332,8 +332,8 @@ build until someone has verified it is safe. How would you implement this?
 
 **Documentation**
 
-- [Manage Curation policies](https://jfrog.com/help/r/jfrog-security-user-guide/products/curation/manage-curation/manage-policies)
-- [Curation conditions](https://jfrog.com/help/r/jfrog-security-user-guide/products/curation/manage-curation/manage-conditions)
+- [Manage Curation](https://docs.jfrog.com/security/docs/manage-curation)
+- [Manage Policies](https://docs.jfrog.com/security/docs/manage-policies)
 - [How to ensure only approved licenses are used](https://docs.jfrog.com/security/docs/how-to-ensure-only-open-source-packages-with-approved-licenses-are-used)
 
 **Timebox: 15 minutes.** Reading the solution having thought about it is a good
