@@ -213,8 +213,8 @@ The second command will attempt to download a package, but it will fail. When it
 ```
 npm notice package highcharts:8.2.0 download was blocked by jfrog packages curation service due to the following policies violated {user01-approved-licences,user01-approved-licences,This package has licenses that are not allowed: [LicenseRef-jfrog-highcharts],Please replace it with an alternate package with license approved by the company for use.}. For details and alternatives, visit: https://<jfrog-workshop-instance>.jfrog.io/ui/catalog/packages/details/npm/highcharts/8.2.0?ecosystem=generic&showVersions=true
 npm error code E403
-npm error 403 403 Forbidden - GET https://<jfrog-workshop-instance>.jfrog.io/artifactory/api/npm/user01-npm-virtual/highcharts/-/highcharts-8.2.0.tgz
 npm error 403 In most cases, you or one of your dependencies are requesting
+npm error 403 403 Forbidden - GET https://<jfrog-workshop-instance>.jfrog.io/artifactory/api/npm/user01-npm-virtual/highcharts/-/highcharts-8.2.0.tgz
 npm error 403 a package version that is forbidden by your security policy, or
 npm error 403 on a server you do not have access to.
 ```
@@ -225,213 +225,155 @@ Compare this with lab 01, where `npm pack ms@2.1.3` worked. Same repository, sam
 
 ### 6. Find out why, from the platform
 
-In the JFrog UI, in the **Platform** tab, go to **Curation** and then **Audit Events**. In the list of **Blocked** events, you should see an entry relating to the package that just got blocked.
+In the JFrog UI, select the **Platform** tab, go to **Curation** and then **Audit Events**. In the list of **Blocked** events, you should see an entry relating to the package that just got blocked.
 
 If you click on that line, you'll see a more detailed view, which includes information about the blocked package and the Curation policy that caused the block.
 
+![alt text](images/curation-audit-events.png)
+
 ### 7. Request a waiver, then approve it
 
-The developer's next question is "so how do I get it?", and the answer is not
-"turn the policy off".
+We set policies to block packages that are actually dangerous or potentially risky. In some circumstances a developer might have a legitimate reason to have access to a particular blocked package, and in that case they can request access using a waiver.
 
-Request a waiver for `highcharts@8.2.0`, giving a reason. Something honest:
+On the detail page for the blocked audit events we're currently looking at, at the top right you'll see a "Request waiver" link. Click that and you'll see the following:
+
+![alt text](images/curation-waiver-request.png)
+
+> [!NOTE]
+> It's also possible to request a waiver by going to the **Platform** tab, selecting **Curation**, then **Waiver Requests** and then choosing **Create a new request** from the top right of that page
+>
+> There's also a method to create waivers from the command line, which we'll explore in later labs
+
+At the top you can see the details of the package you're requesting a waiver for. Under that are details relating to the block event from the audit log. You can also see details of which policy is causing the block and details of who will approve the request.
+
+In the request reason box, enter the following:
 
 ```
 Commercially licensed charting library, purchased. Approved by legal on
 2026-01-15. Needed by the status dashboard.
 ```
 
-Then, still as the administrator, approve it.
+When finished, click the **Submit** button.
 
 > [!IMPORTANT]
-> **You have just approved your own waiver, and that is wrong.** It works here
-> only because the workshop gives everyone the same admin account.
->
-> In a real organization the **decision owners** field on the policy points at a
-> group, and the person who wants the package is not in it. The developer asks,
-> somebody accountable decides, and the record shows who. That separation is the
-> entire value of a waiver over an exception granted verbally in a corridor.
->
-> Lab 11 comes back to this record.
+> In this lab scenario, we're currently logged in as the workshop administrator, and that user is a member of the approvers group for waivers. So, in this case, we can approve our own waiver. However, in a real world environment, that would not be a good practice! The approvers would normally be a separate group of users who would review each waiver request, and decide whether that package should be allowed or not.
 
-Confirm the waiver worked:
+Let's go ahead and approve our waiver, just so we can see the process in action. If you're not there already, from the **Platform** tab, select **Curation**, then **Waiver Requests**.  You should be on the **Pending Requests** view and be able to see something like this:
+
+![alt text](images/curation-waiver-request-pending-requests.png)
+
+Click on the waiver request and you'll see the following:
+
+![alt text](images/curation-waiver-request-pending-requests-approval.png)
+
+Here you can see the details of the waiver request and reason provided by the requester. At the bottom, you can see there are options to Approve or Reject, and there's space to add a reason for the decision.
+
+Click the **Approve** option and then add the following to the Reason
+
+```
+Confirmed with legal that licence has been acquired.
+```
+
+Then click the **Apply** button at the bottom right of the screen, and confirm that you want to apply the waiver to the policy.
+
+Finally, let's confirm the waiver worked. In the Codespaces terminal, type the following:
 
 ```bash
 cd /tmp && npm pack highcharts@8.2.0
 ```
 
-It succeeds this time. The policy is unchanged and still blocking everything else
-that is not on your allow list. One package has a recorded, attributed exception.
-
-### 8. Go back to being yourself
-
-Close the private window. Your own session is untouched in your original window,
-still scoped to your own project.
-
-Every remaining lab is done as yourself, apart from lab 11.
+The package download will succeed this time. The policy is unchanged and still blocking everything else that is not on your allow list. But one package has a recorded, attributed exception.
 
 ## Checkpoint
 
-1. A Curation condition named with your prefix exists, of the allow-list-by-
-   license type.
-2. A policy named with your prefix exists, and its scope names **only your own**
-   `-npm-remote` repository. Read it back and be certain.
+1. A Curation custom condition named with your prefix exists.
+2. A Curation policy named with your prefix exists, and its scope names **only your own** `<userxx>-npm-remote` repository. Read it back and be certain.
 3. `npm pack highcharts@8.2.0` failed before the waiver and succeeds after it.
-4. The blocked request appears in the Curation audit view, and the approved
-   waiver is recorded against the package.
-5. You are back in your own account.
-
-> [!IMPORTANT]
-> Item 2 is the one to be sure about. Everything else in this lab affects only
-> you. That one affects everybody.
+4. The blocked request appears in the Curation audit view, and the approved waiver is recorded against the package.
 
 ## What just happened
 
-**You moved a control from detection to prevention.** Everything else today
-reports on artifacts you already have. This refused one. That is a different
-category of control and it is the only one that keeps a problem out of your
-estate rather than describing it once it is in.
+**You moved a control from detection to prevention.** Historically, detection tools were used to scan artifacts we already have to look for potential vulnerabilities or malicious packages. With Curation, we can prevent these artifacts from ever entering our environment in the first place.
 
-**You chose default-deny and immediately felt the cost.** An allow list of five
-licenses blocked a package your own application needs. That is not a
-misconfiguration, it is the policy working, and the conversation it forced,
-namely who decided this library is acceptable and on what basis, is exactly the
-conversation a license policy exists to force. A block list would have avoided
-the awkwardness and also missed the package.
+**You chose default-deny and immediately felt the cost.** An allow list of five licenses blocked a package your own application needs. That is not a misconfiguration, it is the policy working, and the conversation it forced, namely who decided this library is acceptable and on what basis, is exactly the conversation a license policy exists to force.
 
-**The waiver is the part most people skip and then regret.** A policy without a
-sanctioned exception route does not get respected; it gets circumvented, usually
-by someone disabling it at 5pm on a Friday. A waiver keeps the control on, names
-the exception, and records who accepted the risk. The reason you were told off
-for approving your own is that the record is worthless if the requester and the
-approver are the same person.
+**The waiver is the part most people skip and then regret.** A policy without a sanctioned exception route does not get respected; it gets circumvented. A waiver keeps the control on, names the exception, and records who accepted the risk.
 
-**Scope is where this goes wrong in the field.** You were made to check it twice
-because a policy scoped wider than intended is both easy to create and hard to
-diagnose: the symptom appears in someone else's build, days later, as an
-unrelated failure. That is worth remembering when you configure this for real,
-where the blast radius is your organization rather than fourteen colleagues.
+**Scope is where this goes wrong in the field.** You were made to check it twice because a policy scoped wider than intended is both easy to create and hard to diagnose: the symptom appears in someone else's build, days later, as an unrelated failure. That is worth remembering when you configure this for real, where the blast radius is your organisation, not just the other participants in this lab!
 
 ## Challenge
 
 🎯 **The scenario**
 
-Your CISO has raised concerns about the recent wave of malicious packages on
-npm. They want assurance that no newly published package can be pulled into a
-build until someone has verified it is safe. How would you implement this?
+Your CISO has raised concerns about the recent wave of malicious packages on npm. They want assurance that no newly published package can be pulled into a build until someone has verified it is safe. How would you implement this?
 
 **Success criteria**
 
-- A second condition and policy exist, both carrying your prefix, and the policy
-  is scoped to **your own** remote repository only.
-- You can state the window you chose and defend it. There is no correct number,
-  but there is a reasoning you should be able to articulate.
-- You can explain what this catches that your license policy does not, and what
-  it costs a developer who genuinely needs a package published this morning.
+- Block any npm package that is less than 14 days old. Don't forget to ensure any conditions or policies you create have your prefix applied, and the policy is scoped to **your own** remote npm repository only.
 - Your existing license policy still works.
 
 **Documentation**
 
 - [Manage Curation](https://docs.jfrog.com/security/docs/manage-curation)
 - [Manage Policies](https://docs.jfrog.com/security/docs/manage-policies)
-- [How to ensure only approved licenses are used](https://docs.jfrog.com/security/docs/how-to-ensure-only-open-source-packages-with-approved-licenses-are-used)
 
-**Timebox: 15 minutes.** Reading the solution having thought about it is a good
-outcome. Guessing at a form for fifteen minutes is not.
+**Timebox: 15 minutes.**
 
 <details>
 <summary>Solution</summary>
 
-The CISO has described **package immaturity**, without using the term. A
-newly published version has had no time to be examined by anyone, and the
-established attack pattern is to publish a malicious version and rely on
-automatic resolution picking it up within hours.
+Your CISO is asking you to implement **package immaturity** policies. A newly published version has had no time to be examined by anyone, and the established attack pattern is to publish a malicious version and rely on automatic resolution picking it up within hours.
 
-Curation has a condition template for exactly this.
+Curation has both built-in and custom conditions for this. These are the built-in conditions
 
-1. As `workshop-admin`, create a condition using the **Package version is
+![alt text](images/curation-immature-conditions.png)
+
+If you click any of these conditions, a window will appear showing you the details for each. You'll see that the **Package Version is Immature (Moderate)** condition is set to 14 days. If you want a different number of days, you can either choose one of the other two built-in conditions, or create a custom one.
+
+1. As `workshop-admin`, Create a Curation policy, scoped to your npm remote repository
+2. From the list of Policy Conditions, select the **Package Version is Immature (Moderate)** condition.
    immature** template.
-2. Set the age threshold. The parameter is a number of days since publication.
-   **14 days** is a reasonable default and is what the shipped examples use.
-3. Name it with your prefix, for example `user01-cooldown`.
-4. Create a policy using it, action **Block**, scope **specific repositories**
-   naming only your own `-npm-remote`, waiver requests allowed.
+3. Skip the Waivers section, then in Actions and Notifications, ensure the policy is set to **Block** and allow manually approved waiver requests.
 
-**On defending the window.** There is no right answer and interviewers ask this
-because the reasoning is the skill:
+The completed policy should be similar to this:
 
-- **Too short**, say 24 hours, and you catch almost nothing. Malicious packages
-  are often found in days, not hours, and typosquats can sit unnoticed for
-  weeks.
-- **Too long**, say 90 days, and you have effectively banned upgrades. Security
-  patches are new versions too, so an over-long window blocks the fixes you want
-  alongside the attacks you fear.
-- **14 to 30 days** is where most organizations land, because it is long enough
-  for the community and for scanners to have looked, and short enough that
-  urgent patches are only mildly inconvenient.
+![alt text](images/curation-immature-policy.png)
 
-**What it catches that the license policy does not.** The license policy is about
-terms, and a malicious package can be MIT-licensed. Immaturity is about time, and
-catches things nothing yet knows are bad. Neither subsumes the other, which is
-why Curation lets you stack conditions.
+Why did we set a 14 day window? For an immature policy to be effective it has to be a time period that's long enough for most malicious packages to be detected and reported by the community, so that other policies that handle malicious or vulnerable packages can then take over managing access to them. It also can't be too long - if a package is legitimate and maybe includes important security updates, then you need to access to that quickly. A combination of a reasonable number of days and a waiver request process helps to meet these requirements.
 
-**What it costs.** A developer who needs a package published this morning is
-blocked, and correctly so. The waiver route is the answer, and this is where the
-policy design earns its keep: if waivers are hard to get, people route around the
-control. That is a process question rather than a product one, and it is the
-right conversation to have with a customer.
+- **Too short**, say 24 hours, and you catch almost nothing. Malicious packages are often found in days, not hours, and typosquats can sit unnoticed for weeks.
+- **Too long**, say 90 days, and you have effectively banned upgrades. Security patches are new versions too, so an over-long window blocks the fixes you want alongside the attacks you fear.
+- **14 to 30 days** is where most organizations land, because it is long enough for the community and for scanners to have looked, and short enough that urgent patches are only mildly inconvenient.
 
-**Worth noticing:** this same condition is why the workshop instance had to be
-checked for pre-existing policies. An immaturity policy scoped to all
-repositories, left over from someone else's demonstration, blocks a great deal
-and explains nothing.
+**What it catches that the license policy does not.** The license policy is about terms, and a malicious package can still have a valid license. Immaturity is about time, and catches things we don't know about yet.
+
+**What it costs.** A developer who needs a package that was published this morning is blocked, and correctly so. The waiver route is the answer, and this is where the policy design earns its keep: if waivers are hard to get, people route around the control.
 
 </details>
 
 ## Going further
 
-**Look at the other condition templates.** Curation ships with more than
-licenses and immaturity, including CVE severity ranges and known-malicious
-detection. Consider which of them overlap with what Xray will do in lab 03, and
-which are only possible before a package arrives.
+**Look at the other condition templates.** Curation ships with more than licenses and immaturity, including CVE severity ranges and known-malicious detection.
 
-**Find the `block_from_cache` setting** on your policy. Work out what it means
-for a package that was already cached before you wrote the policy, and why the
-answer might be inconvenient.
+**Find the "Enforce policy on cached packages" setting** on your policy. Work out what it means for a package that was already cached before you wrote the policy.
 
-**Consider the waiver as a workflow, not a button.** Look at the decision owners
-field. If you were designing this for a 500-developer organization, who is in
-that group, how quickly do they respond, and what happens at 2am?
+**Consider the waiver as a workflow, not a button.** Look at the decision owners field. If you were designing this for a 500-developer organization, who is in that group, how quickly do they respond, and what happens at 2am?
 
-**Set a policy to dry run instead of block**, if the option exists on your
-instance, and think about how you would use that to introduce Curation to a team
-that has never had it.
+**Set a policy to dry run instead of block** and think about how you would use that to introduce Curation to a team that has never had it.
 
 ## Troubleshooting
 
-**You cannot find Curation.** You are signed in as yourself. Curation needs the
-`workshop-admin` account from your handout, in a private window. This is expected
-and lab 00 step 6 explains why.
+**You cannot find Curation.** You are signed in as yourself. Curation needs the `workshop-admin` account from your handout, in a private window. This is expected and lab 00 step 6 explains why.
 
-**`npm pack highcharts@8.2.0` succeeds when it should have been blocked.** Three
-usual causes:
+**`npm pack highcharts@8.2.0` succeeds when it should have been blocked.** Three usual causes:
 
 - The policy scope does not include your `-npm-remote`. Check it.
 - The policy is disabled. Check the enabled toggle.
-- The package was already in your cache before the policy existed, and the policy
-  does not block from cache. Look for the `block_from_cache` setting.
+- The package was already in your cache before the policy existed, and the policy does not block from cache.
 
-**`npm pack` fails but you cannot tell whether Curation did it.** Check the
-Curation audit view in the admin window. If your request is not there, the
-failure was something else, most likely the npm configuration from lab 01.
+**`npm pack` fails but you cannot tell whether Curation did it.** Check the Curation audit view in the admin window. If your request is not there, the failure was something else, most likely the npm configuration from lab 01.
 
-**Someone else's build broke when you saved your policy.** Your scope is too
-wide. Set it to your own remote repository only, save, and tell your instructor
-so they can confirm nothing else is affected. This is exactly the mistake the
-callouts in step 4 exist to prevent, and it is an easy one to make.
-
-**Your policy is not in the list.** Fifteen people are sharing this view. Filter
-or sort by name and look for your prefix.
+**Someone else's build broke when you saved your policy.** Your scope is too wide. Set it to your own remote repository only, save, and tell your instructor so they can confirm nothing else is affected. 
 
 ## Next
 
