@@ -14,7 +14,7 @@
 
 ## Why this matters
 
-In lab 02, Curation decided what was allowed into your repositories. Xray looks at everything that is already in them and tells you what is wrong with it.
+In lab 02, Curation decided what was allowed into your repositories. Xray looks at everything that is already in them and tells you what is wrong.
 
 The thing that trips people up here is treating a scan result as a decision. A scanner will report hundreds of things, almost none of which should stop a release. A team that tries to fix all of them either stops shipping or stops looking at the reports. The job of a policy is to decide which subset of everything you can see you are actually going to act on, and getting that line in the right place is most of the value of the tool.
 
@@ -33,7 +33,7 @@ There are three objects involved, and they are deliberately kept separate.
 ```mermaid
 graph LR
     Policy["Policy<br/>fail on Critical"]
-    Rule["Rule<br/>severity is Critical<br/>action: fail build"]
+    Rule["Rule<br/>CVE severity is Critical<br/>action: fail build"]
     Watch["Watch<br/>your npm repositories"]
     Target["Your repositories<br/>and later, your builds"]
     Violation["Violation"]
@@ -46,14 +46,14 @@ graph LR
 
 The reason there are three objects rather than one is that "what do we consider unacceptable" and "where does that apply" are different questions with different owners. A security team defines the policy once. Individual teams get watched by it. Keeping them separate is what stops you maintaining fifteen slightly different copies of the same rule.
 
-### Finding and violation are not the same thing
+### A finding and a violation are not the same thing
 
 This is the distinction that the rest of the workshop leans on.
 
 - A **finding** is something Xray observed, such as a CVE in a component you are holding. Xray reports every finding it knows about, whether you care about it or not.
-- A **violation** is a finding that matched a rule, in a policy, attached by a watch. Violations have consequences: a failed build, an alert, a blocked promotion.
+- A **violation** is a finding that matched a rule, in a policy, attached by a watch. Violations have consequences, such as a failed build.
 
-There will always be far more findings than violations, and that is how it is supposed to work. A team that cannot tell the two apart will read a long scan report as a crisis and either panic or, worse, learn to ignore the report altogether.
+There will always be far more findings than violations, and that is how it is supposed to work. A team that cannot tell the two apart will read a long scan report as a crisis and either panic or, worse, learn to ignore the report altogether. Violations allow you to focus on the specific findings that are important to you.
 
 ### Applicability, and why it matters in this lab
 
@@ -61,14 +61,11 @@ Xray does more than match version numbers. Contextual Analysis looks at whether 
 
 | Verdict | Meaning |
 | --- | --- |
-| **Applicable** | The vulnerable code path is reachable in the way you have used it |
-| **Not Applicable** | The component is there but the vulnerable path is not reachable |
-| **Missing Context** | The analysis could not reach a conclusion with the information available |
-| **Undetermined** | The analysis ran but was inconclusive |
-| **Not Covered** | This CVE is not one that Contextual Analysis supports |
-
-> [!IMPORTANT]
-> Only `Applicable` means reachable. None of the other four mean safe to ignore. `Not Covered` in particular means that nobody looked, not that there is nothing there. Reading everything except `Applicable` as noise is the easiest mistake to make with this feature.
+| **Applicable** | The vulnerability can be exploited in the context of the scanned code or artifact. |
+| **Not Applicable** | The vulnerability cannot be exploited in the context of the scanned code or artifact. |
+| **Missing Context** | Reachability analysis cannot determine the vulnerability’s applicability due to missing context. |
+| **Undetermined** | The applicability cannot be determined by static analysis. For example, exploitation requires user interaction. |
+| **Not Covered** | This CVE is not one that Contextual Analysis supports. |
 
 That matters concretely in a moment, because every Critical severity finding in our sample application is either Not Applicable or Missing Context. Not one of them is Applicable. A policy configured to act only on applicable findings will therefore find nothing to do here, and you would reasonably conclude that your policy was working when in fact it had never once been tested.
 
@@ -78,66 +75,75 @@ All of these terms are in the [glossary](../../docs/glossary.md), including **CV
 
 Everything in this lab is done as yourself, in your own project. Unlike Curation, Xray respects the project boundary.
 
+> [!IMPORTANT]
+> Remember to switch back to the browser session, or log in again, using your userxx credentials, not the workshop-admin account, for the following lab.
+
 ### 1. Get to Xray
 
-Make sure your project is selected, go to the **Administration** tab, and find the Xray configuration area for policies and watches.
-
-> [!IMPORTANT]
-> VERIFY: confirm the navigation to Xray policies and watches for a project-scoped user on a current instance. Confirm in particular whether policies and watches are administered inside the project context at all, or only at instance level. If it turns out to be the latter then this lab needs the shared administrator account in the same way lab 02 does, and the concept section needs rewriting, because it currently contrasts Xray with Curation on exactly this point.
+Make sure your project is selected, go to the **Platform** tab, then **Xray** and then **Watches and Policies**
 
 ### 2. Create the policy
 
-Create a new **Security** policy, and call it:
+Click the **Create a Policy** button and create a name for your new policy
 
 ```
-user01-critical-only
+user<xx>-critical-only
 ```
 
-Your project prefixes resources automatically, but put the name in explicitly anyway. You will be glad of it in lab 09 when you are looking at a list of them.
+Notice that there are three policy types available. For this lab, we're going to create a new **Security** policy, so make sure that's selected before you click **Next**
 
-Add a single rule:
+![alt text](images/xray-policy-details.png)
 
-| Field | Value |
-| --- | --- |
-| Rule name | `critical-severity` |
-| Criteria | Minimum severity: **Critical** |
-| Include non-applicable findings | **Yes.** See below, this one matters |
-| Actions | Fail build, and notify |
+Name the rule `critical-severity`. Then in the **Rule type** dropdown, select **CVEs**. We have three options to choose from depending on how we want to handle detection of CVEs. We'll use the default **Minimal Severity** option, and then from the dropdown box marked **Select minimal severity**, we'll choose **Critical**
 
-<!-- SCREENSHOT: labs/03-xray/images/policy-critical-rule.png
-     Capture: the security rule form with minimum severity set to Critical, the
-     include-non-applicable setting enabled, and the fail-build action selected. -->
+![alt text](images/xray-policy-rule.png)
 
-> [!IMPORTANT]
-> VERIFY: confirm the exact label and location of the setting that controls whether non-applicable findings count towards a violation. It may be phrased the other way round, as skipping non-applicable CVEs, in which case you want it switched off. The name used above is descriptive rather than literal.
+You'll notice we have some options under that allow us to further fine tune the conditions that will generate a violation. For example, we can choose not to generate a violation if a fix for the CVE is not available, or we can skip creating a violation if the CVE is not applicable.
 
-We are using Critical only, rather than High and above, because a policy that fires on everything is a policy that people switch off. Starting narrow and widening it once a team trusts it is how this succeeds in practice. You will see the consequence of that choice directly: `express` and `jsonwebtoken` in our application both carry Medium and High findings that will be perfectly visible and will not stop anything.
+On the right, you'll see there are a choice of actions that we can configure to take place if this policy condition is met. For this example, we'll choose the **Notify watch recipients** notification option, and the **Fail Build** block option.
 
-We are including non-applicable findings because in this application, leaving them out means the policy never fires at all. There are two honest positions here.
+![alt text](images/xray-policy-actions.png)
 
-- Include them, which is what we are doing. You act on severity, and applicability tells you how urgently rather than whether. Noisier, and nothing gets past you.
-- Exclude them, and act only on what is provably reachable. Much quieter, and you are trusting the analysis to be complete, which `Missing Context` and `Not Covered` are telling you it sometimes is not.
+> [!NOTE]
+> The **Block Download** option in this list only works on local repositories. As you saw in Lab 02, Curation is used for blocking remote repositories.
 
-Most organizations start by including them and tighten up later. What you should not do is pick one without realising you have picked it, which is exactly what happens when nobody reads this field.
+Click the **Save Rule** button to save your rule.
 
-Save the policy.
+In this lab we're only assigning one rule to this policy, but notice that you could add additional rules here if you wanted to.
+
+![alt text](images/xray-policy-rules-list.png)
+
+Click the **Next** button to continue.
+
+The **Apply on Scope** section is optional and allows us to immediately assign this Policy to a Watch. If we already had some Watches defined, then it may be convenient to do that from here. However, as we're yet to create any Watches, we'll need to do that first. So, for now, simply click the **Save Policy** button to save the Policy we've created.
 
 ### 3. Create the watch
 
-A policy on its own does nothing at all. Create a watch:
+A Policy on its own does nothing at all. The Watch, is how we apply a policy.
 
-```
-user01-npm-watch
-```
+Go to the **Watches** tab and choose **Set up a Watch**
 
-- **Target:** your npm repositories. Include the remote cache repository, `user01-npm-remote-cache`, because that is where packages fetched from upstream actually end up.
-- **Policy:** attach `user01-critical-only`.
+Set the name of your Watch to `user<xx>-npm-watch`
 
-<!-- SCREENSHOT: labs/03-xray/images/watch-with-policy.png
-     Capture: the watch form with the attendee's npm repositories as targets and
-     the critical-only policy attached. -->
+Next, in the Watch Recipients section, you can optionally add an email address of someone who will be notified when a violation is generated. Recall that in the Policy we just defined, we set the notification option to **Notify watch recipients**. That option will cause the recipients here to be notified.
 
-Save it.
+At the bottom of the page, there are four sections that specify the resource types we want our Watch to monitor. Click on the **Add Repositories** option, and in the dialog that pops up, find your npm remote `user<xx>-npm-remote`. Select that and then use the arrows in the centre of the page to move that to the right hand side.
+
+![alt text](images/xray-watch-selected-repos.png)
+
+Click the **Save** button
+
+Finally, we will assign the Policy we created to this Watch. Click the **+ Manage Policies** button.
+
+You should only see one policy - the one you just created. Add that to the list on the right and then click **Save**
+
+![alt text](images/xray-watch-manage-policies.png)
+
+The completed Watch should now look like the following, with a name, repository and policy assigned.
+
+![alt text](images/xray-watch.png)
+
+Click the **Create** button to complete the creation of your new Watch
 
 ### 4. Give it something to look at
 
@@ -147,48 +153,60 @@ Your watch is now guarding repositories that contain almost nothing, just the on
 cd /tmp && npm pack lodash@4.17.15
 ```
 
-That is one of our own application's dependencies, at the version it ships with. It will land in your remote cache, which is where your watch is looking.
+That is one of our sample application's dependencies, at the version it ships with. It will land in your remote cache, which is where your watch is looking.
 
-> [!NOTE]
-> Xray indexes new artifacts in the background rather than immediately. Give it a minute or two before you expect to see results, and re-check rather than assuming it has failed.
+Xray indexes new artifacts in the background rather than immediately. It may take a few minutes to see results. To check the scan status, from the **Platorm** tab, go to the **Xray** menu and select **Scans List**.
+
+Then, from the **Repositories** tab, select the name of your npm remote's cache `user<xx>-npm-remote-cache`
+
+![alt text](images/xray-scans-list.png)
+
+On this page, you can see artifacts being scanned and the scan status. If it says **Scanning**, then you just need to wait for that to complete. You might need to refresh the page.
+
+![alt text](images/xray-scans-list-scanning.png)
 
 ### 5. Find your violation
 
-Go to the **Platform** tab and open the Xray scan results or violations view for your project.
+Now go to the **Platform** tab and from the **Xray** menu go to **Watch Violations**. On that page, you should see your watch listed. Click on the watch and you will be taken to a list of violations, which at this point should just contain one item - a CVE relating to the `lodash` dependency we just downloaded. Click on that CVE and you'll see full information about that vulnerability.
 
-You are looking for `lodash 4.17.15` and **CVE-2026-4800**, which is a Critical.
+![alt text](images/xray-scan-lodash-cve.png)
 
-<!-- SCREENSHOT: labs/03-xray/images/violation-lodash.png
-     Capture: the violations view showing the lodash Critical violation, with
-     the policy name and the Not Applicable contextual analysis verdict both
-     visible in the same row. -->
+So, Xray has highlighted a critical CVE as the result of the Policy and Watch that we configured. But is that everything? Let's dig deeper.
 
-> [!IMPORTANT]
-> VERIFY: confirm where violations appear for a project-scoped user, and whether a repository watch surfaces them in the same place that build violations will appear later. This is the step most likely to have moved since it was written.
+From the **Platform** tab, go to **Xray** and then choose the **Scans List**, and again select your npm remote's cache `user<xx>-npm-remote`. At the top, you should see the line item for the `lodash` dependency that we uploaded. Note that it mentions **1 violation** and **6 vulnerabilities**
 
-Now have a look at the same package's findings, rather than just its violations. There are considerably more of them: Highs and Mediums that your policy ignored completely. Same package, same scan, one violation.
+![alt text](images/xray-scan-lodash-vulnerabilities.png)
 
-### 6. Look at the applicability verdict
+Click on the entry for `lodash` and we'll see a more detailed report.
 
-On the CVE-2026-4800 violation, find the Contextual Analysis verdict. It reads **Not Applicable**.
+![alt text](images/xray-scan-lodash-vulnerabilities-all.png)
 
-Xray is telling you three things at the same time here, and none of them contradict each other.
+In the **Vulnerabilities** section, click **View All**
 
-1. This is a Critical severity vulnerability, and it really is present.
-2. The vulnerable code path does not appear to be reachable in the way this component is used.
-3. Your policy failed the build anyway, because you told it to.
+You'll now see a full, detailed list of all the CVE's associated with this dependency. One Critical vulnerability, two High vulnerabilties and three Mediums.
 
-Whether that outcome is the right one depends on your organization's appetite rather than on the tool. It is a good conversation to have with a customer, and it does not have a correct answer.
+![alt text](images/xray-scan-lodash-vulnerabilities-list.png)
+
+There is a lot of information available from this page, so take your time to click around and explore. Some of the things you'll find here are:
+
+- Severity levels
+- CVSS scores
+- JFrog Research
+
+JFrog's in-house security research team provide additional detailed analysis of CVE's. If you look at `CVE-2020-8203` in this list, you'll see several things. The severity level is High, but there's a marker next to the high symbol. This is because JFrog's research team has determined that they think the severity is different. If you look under the **JFrog Research** column, you'll see that it says **Critical** there.
+
+If you click on that CVE, you'll get access to even more information. On the page that comes up, select the **JFrog Research** tab.
+
+![alt text](images/xray-scan-lodash-vulnerabilities-jfrog-research.png)
+
+There is a lot of additional information here, including a detailed analysis of the CVE. At the bottom, you;ll find the **JFrog Research Severity Reasons** section, and in here the security team document why they think the actual severity is different to the one issued to the CVE.
 
 ## Checkpoint
 
-1. A security policy exists with one Critical severity rule, and non-applicable findings are being counted.
+1. An Xray policy exists with one Critical severity rule.
 2. A watch exists, attached to that policy, targeting your npm repositories including the remote cache.
 3. `lodash 4.17.15` is in your cache, and CVE-2026-4800 appears as a violation rather than only as a finding.
 4. You can point at a finding on that same package that is not a violation, and say why it is not.
-5. You can say what would happen to your violation if you excluded non-applicable findings.
-
-Item 4 is the one to be able to explain out loud, because it is the idea the rest of the workshop is built on.
 
 ## What just happened
 
