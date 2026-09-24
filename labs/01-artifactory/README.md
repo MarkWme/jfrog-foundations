@@ -21,7 +21,7 @@ Everything in the platform sits on top of repositories. Curation controls which 
 There are three main repository types that you will use most often.
 
 - A **local repository** stores artifacts you produced. Your own builds publish here.
-- A **remote repository** is a proxy for somewhere else. Let's say you're working with Node.js applications, which use the NPM package manager. When you request a package the first time, the repository fetches the package from NPM's public repository at npmjs.org and then delivers a copy to you. The next time you request that same package, it's pulled directly from the Artifactory remote repository. This removes the need to pull the package from the NPM public repository, so it protects you from things like upstream outages or someone intentionally or accidentally removing a package from that upstream repository.
+- A **remote repository** is a proxy for somewhere else. Let's say you're working with Node.js applications, which use the **npm** package manager. When you request a package the first time, the repository fetches the package from npm's public repository at npmjs.org and then delivers a copy to you. The next time you request that same package, it's pulled directly from the Artifactory remote repository. This removes the need to pull the package from the npm public repository, so it protects you from things like upstream outages or someone intentionally or accidentally removing a package from that upstream repository.
 - A **virtual repository** aggregates local and remote repositories behind one name. It allows you to create local and remote repository structures which can be modified as needed, whilst providing a consistent endpoint for developers to work with when pulling or pushing packages.
 
 ```mermaid
@@ -70,15 +70,12 @@ For the repository key, type:
 npm-local
 ```
 
-<!-- SCREENSHOT: labs/01-artifactory/images/create-local-repo.png
-     Capture: the local repository creation form with npm selected as the
-     package type and the repository key field filled in, showing the project
-     key prefix applied automatically. -->
-
 > [!NOTE]
-> **Look at the key field after you type.** The platform has put your project key in front of it, so the full name of the repository is actually `user01-npm-local`. This helps ensure that the repository name you choose is unique across all the repositories in your JFrog Platform.
+> **Look at the key field after you type.** The platform has put your project key in front of it, so the full name of the repository is actually `user<xx>-npm-local`. This helps ensure that the repository name you choose is unique across all the repositories in your JFrog Platform.
 
 At the bottom right of the screen, click the "Create Local Repository" button. You'll see a message telling you that your npm repository was created successfully. For now, click the "I'll Do It Later" button.
+
+![alt text](images/artifactory-npm-local.png)
 
 ### 3. Create the remote npm repository
 
@@ -94,6 +91,8 @@ The URL it proxies should default to the public npm registry, `https://registry.
 
 That's it. Click the "Create Remote Repository" button at the bottom right of the screen. Again, once you seen the confirmation screen, click "I'll Do It Later".
 
+![alt text](images/artifactory-npm-remote.png)
+
 ### 4. Create the virtual npm repository
 
 Create a third repository. For this one, choose **Virtual**, and again the package type **npm**.
@@ -106,13 +105,11 @@ npm-virtual
 
 Next we have to assign local and remote repositories to this virtual repository. At the bottom of the page, and you may have to scroll down to get to it, you will find a **Repositories** section. It should list the local and remote repositories we created in the previous steps. Next to that, you'll see some left and right pointing arrows.  If you click the top right pointing double arrow, you should see both of your repositories move from the "Available Repositories" column, to the "Selected Repositories" column.
 
+![alt text](images/artifactory-npm-virtual-repositories.png)
+
 Beneath that, you will see a section labeled "Default Deployment Repository". This lets Artifactory know which of these repositories should be used for storage of artifacts that are pushed to this virtual repository. As we only have one local repository defined, you should only see one in the list. Select that.
 
-<!-- SCREENSHOT: labs/01-artifactory/images/create-virtual-repo.png
-     Capture: the virtual repository creation form with both the local and
-     remote repositories moved into the Selected Repositories column, and the
-     Default Deployment Repository set to the local repository. -->
-
+![alt text](images/artifactory-npm-virtual-default-deployment.png)
 
 Finally, click the "Create Virtual Repository" button at the bottom right of the screen, and again you can dismiss the confirmation dialog by clicking the "I'll Do It Later" button.
 
@@ -141,13 +138,19 @@ In the previous steps, we skipped over the confirmation messages that were offer
 
 When you click the "Set Me Up" button, it should then ask you to select a package type. As we've only configured npm so far, you should only see one option, so click npm.
 
-Next, click the text box marked "Search for a repository" and you should see a dropdown list with all the repositories we've created so far listed. Choose the virtual repo that you created, which should have a name like **userxx-npm-virtual**.
+![alt text](images/artifactory-npm-set-me-up.png)
+
+Next, click the text box marked "Search for a repository" and you should see a dropdown list with all the repositories we've created so far. Choose the virtual repo that you created, which should have a name like **user<xx>-npm-virtual**.
 
 You'll now see a section labelled "Set up client with new or existing token". By default, the "Generate token" option should be selected.
 
 In the text box below, enter the password you used to login to the JFrog Platform, and then click the "Generate Token & Create Instructions" button.
 
+![alt text](images/artifactory-npm-set-me-up-token.png)
+
 You'll now see a token that was generated along with instructions for different configuration options. We're going to follow the instructions in the "npm login (Unscoped)" section.
+
+![alt text](images/artifactory-npm-set-me-up-client.png)
 
 Copy the command line listed under the "Set artifactory as default registry" section and paste it into your Codespaces terminal. The command should look similar to the example below, but with the name of your actual JFrog Platform instance and virtual repositories instead.
 
@@ -164,7 +167,7 @@ npm login --auth-type=web
 Click the link shown in your terminal - depending on your device type you might need to press CTRL or CMD whilst clicking the link. You should be taken to your JFrog Platform instance where you will be asked to approve the npm client connection. Complete that and return to Codespaces.
 
 > [!NOTE]
-> This process writes an access token into `~/.npmrc` inside your Codespace. That is what a developer machine really looks like, and it is safe here because the container is disposable. In production you would use a short-lived credential instead, which lab 07 comes back to.
+> This process writes an access token into `~/.npmrc` inside your Codespace. That is what a developer machine really looks like, and it is safe here because the container is disposable. In production you would use a short-lived credential instead.
 
 ### 7. Fetch something through it
 
@@ -206,7 +209,7 @@ So, how can we check that we did indeed just download that package via Artifacto
 Go to the **Platform** tab, then **Artifactory**, then **Artifacts**, and expand your repositories.
 
 You will find a repository you did not create: **`user01-npm-remote-cache`**. Expand the contents until you reach a folder called `ms`. Artifactory created the cache alongside your remote
-repository, and that is where fetched copies live.
+repository, and that is where the fetched copies live.
 
 <!-- SCREENSHOT: labs/01-artifactory/images/remote-cache-tree.png
      Capture: the Artifacts tree with the -cache repository expanded showing the
