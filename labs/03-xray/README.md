@@ -210,13 +210,9 @@ There is a lot of additional information here, including a detailed analysis of 
 
 ## What just happened
 
-We drew a line, deliberately and narrowly. Your repositories contain dozens of findings and produced one violation. That ratio is the configuration rather than a failure of it. Enforcement is a policy decision and visibility is a tool capability, and confusing the two is how organizations end up either ignoring their scanner or unable to release anything.
+Your repositories contain several findings and produced one violation. Whilst Xray surfaces every vulnerability, giving you the full picture of the security state of your application, policies are used to make decisions about which vulnerabilites you want to take action on.
 
-**We also found out that the default settings might have caught nothing.** Every Critical in this application is Not Applicable or Missing Context. Had we left non-applicable findings out, the policy would have been perfectly well formed and completely inert, and there would have been no way of knowing from looking at it. That applies well beyond Xray: if you have never seen a control fire, you have not tested it.
-
-**We separated the rule from the target.** The policy says what is unacceptable and the watch says where. When lab 07 adds a build to that watch, the policy does not change and neither does anything else you configured today.
-
-**You now have real data with your own name on it.** Labs 09 to 11 tour the platform UI, and the reason they come last in the day is so that they contain your violations rather than a demo tenant's.
+We separated the rule from the target. Policies say what is unacceptable and Watch say where.
 
 ## Challenge
 
@@ -244,14 +240,20 @@ Your legal team has been asked to sign off on the open source that your product 
 
 The mechanic is the one we just used. Only the type of policy changes.
 
-1. Create a policy of type **License** rather than Security, named `user01-license-compliance`.
+1. Create a policy of type **License** rather than Security, named `user<xx>-license-compliance`.
 2. Add a rule. Either list the licenses you allow, using the same permissive set as lab 02, `MIT`, `Apache-2.0`, `BSD-2-Clause`, `BSD-3-Clause` and `ISC`, or list the ones you ban. The allow list is the stronger position, for the same reason it was in lab 02.
-3. Set the action. Notify rather than fail is the better answer here, and it is worth being able to defend that: legal sign-off is a review gate rather than a build gate, and failing a build on a license question tends to get the policy disabled by lunchtime.
+3. Set the action. Notify rather than fail is likely the better answer here. Legal sign-off is a review gate rather than a build gate.
 4. Attach it to your existing watch. Do not create a second one.
 
-On the question of one watch rather than two. The watch answers "where does this apply", and that answer has not changed. It is still the same repositories. What changed is the policies. Adding a second watch over the same targets gives you two places to look, two things to maintain, and your violations split between them. Watches are per-target and policies are per-concern.
+The completed license policy should look similar to this:
 
-**What it flags.** `highcharts@8.2.0` is in your cache from lab 02, and its license is a non-public commercial reference rather than anything on your allow list. `lodash` and `ms` are both MIT and will pass.
+![alt text](images/xray-licence-policy.png)
+
+On the question of one watch rather than two. The watch answers "where does this apply", and that answer has not changed. It is still the same repositories. What changed is the policies. Adding a second watch over the same targets gives you two places to look, two things to maintain, and your violations split between them.
+
+**What it flags.** `highcharts@8.2.0` is in your cache from lab 02, and its license is a non-public commercial reference rather than anything on your allow list. `lodash` and `ms` are both MIT and will pass. You should see results like this:
+
+![alt text](images/xray-licence-violation.png)
 
 **How this differs from lab 02**, which is the real question here:
 
@@ -261,7 +263,7 @@ On the question of one watch rather than two. The watch answers "where does this
 | **Effect** | Refused at the door, nothing to clean up | Reported, and it is already in your estate |
 | **Blind spot** | Only sees what arrives from upstream from now on | Sees everything, including what arrived before you had any policy at all |
 
-You want both, and the blind spot row is the reason. Curation cannot help you with the thousand packages you cached last year. Xray cannot stop tomorrow's arrival. `highcharts` is the case in point: Curation blocked it, you waived it in, and the Xray license policy now reports it as present in your estate under a non-permissive license. Both of those are correct, and they are answering different questions.
+Curation and Xray work together to protect you from issues with packages you're using for the first time, and packages you already have in your environment. In these labs, we blocked `highcharts` from entering using Curation to block it, then we allowed it using a waiver, and then the Xray license policy found it and now reports it as present in your environment under a non-permissive license.
 
 </details>
 
@@ -269,11 +271,9 @@ You want both, and the blind spot row is the reason. Curation cannot help you wi
 
 This section is optional. Nothing later depends on any of it.
 
-**Turn the non-applicable setting off** on your policy, and then re-check your violations. Your only violation disappears while the finding stays exactly where it was. Turn it back on again afterwards. That is the quickest demonstration of findings against violations available, and it is worth doing rather than just reading about.
+**Add a High severity rule** to the same policy, with a notify action instead of fail. You now have a policy with two rules and two different consequences depending on severity.
 
-**Add a High severity rule** to the same policy, with a notify action instead of fail. You now have a policy with two rules and two different consequences depending on severity, which is what most real policies look like.
-
-**Look at what else a watch can target** besides repositories. Builds and release bundles are both options, and lab 07 uses the build one. Have a think about which you would watch in your own environment, and why watching only repositories is not enough.
+**Look at what else a watch can target** besides repositories. Builds and release bundles are both options, and in a later lab we'll setup watches on builds. Have a think about which you would watch in your own environment, and why watching only repositories is not enough.
 
 **Find the CVSS score** on the lodash violation and compare it with the severity label. Consider what JFrog Security Research adds on top of the public score, and why two scanners can disagree about the same CVE.
 
@@ -284,11 +284,8 @@ This section is optional. Nothing later depends on any of it.
 1. Is `lodash` actually in `user01-npm-remote-cache`? Have a look in Artifacts. If it is not there, then the `npm pack` did not go through Artifactory, and the npm configuration from lab 01 is the place to look.
 2. Does the watch target that cache repository specifically? Targeting only the virtual or the local repository will not catch it.
 3. Is the policy actually attached to the watch? A policy with no watch does nothing.
-4. Are non-applicable findings included? If they are not then there is nothing to find, because every Critical in this application is Not Applicable or Missing Context. This is the most likely cause.
 
-**You can see the finding but there is no violation.** That is item 4 above, and it is this lab's whole point arriving through the back door. Your policy is not counting the finding. Check the severity threshold and the non-applicable setting.
-
-**You cannot find Xray policies under Administration.** Check that your project is selected rather than All Projects. If Xray configuration turns out to be instance level on your tenant, use the `workshop-admin` account as you did in lab 02, and let your instructor know, because this lab assumes it is not.
+**You cannot find Xray Watches and Policies in the UI.** Check that your project is selected rather than All Projects.
 
 **There are violations from packages you did not fetch.** Your watch targets a repository rather than a package, so anything in that repository is in scope, including the `ms` and `highcharts` from the earlier labs. That is correct behavior, and a useful thing to notice: a watch is a standing instruction rather than a one-off scan.
 
