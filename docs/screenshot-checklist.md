@@ -154,9 +154,30 @@ the current UI rather than trusted.
       possible. Those two facts side by side are the lab's payoff.
       **Referenced at:** lab 03 step 5.
 
+### Lab 05: IDE
+
+- [ ] `labs/05-ide/images/extension-sign-in.png`
+      **Capture:** the JFrog extension sign-in view, with the option to reuse
+      the JFrog CLI's connection details visible.
+      **Referenced at:** lab 05 step 1.
+
+- [ ] `labs/05-ide/images/extension-scan-results.png`
+      **Capture:** the JFrog extension results tree after a completed scan,
+      showing both a dependency finding and a source code finding, so the SCA
+      versus SAST distinction the lab draws is visible in one image.
+      **Referenced at:** lab 05 step 2.
+
+### Lab 06: MCP
+
+- [ ] `labs/06-mcp/images/curation-aged-policy.png`
+      **Capture:** the Curation policy form with the aged package, no newer
+      version identified condition selected, and the scope set to the
+      attendee's own remote repository.
+      **Referenced at:** lab 06 step 4.
+
 ### Later labs
 
-Added in build phases 4 to 6, as the labs are written.
+Added in build phases 5 to 6, as the labs are written.
 
 ---
 

@@ -291,7 +291,4 @@ This section is optional. Nothing later depends on any of it.
 
 ## Next
 
-**04 - CLI**: doing all of this from a terminal, and finding these same findings before you ever push a commit.
-
-> [!NOTE]
-> Lab 04 is added in build phase 4. This link becomes live then. See the [module index](../../README.md#modules) for what is available now.
+[04 - CLI](../04-cli/README.md): doing all of this from a terminal, and finding these same findings before you ever push a commit.

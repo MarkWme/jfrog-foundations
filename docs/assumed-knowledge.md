@@ -17,7 +17,7 @@ bug worth reporting, not a gap in the reader.
    multi-stage builds, GitHub Actions syntax and OIDC each get an introduction
    where they are first needed, rather than being assumed.
 
-**Status:** build phase 3. Labs 00 to 03. Later phases add to it.
+**Status:** build phase 4. Labs 00 to 06. Later phases add to it.
 
 ---
 
@@ -241,9 +241,134 @@ policy.
 
 ---
 
+## Lab 04: CLI
+
+**Format:** guided plus challenge. **Prerequisites:** labs 00, 01, 02, 03.
+
+### Takes as given
+
+| Assumed | Where from | Risk |
+| --- | --- | --- |
+| A JFrog CLI server configuration named `workshop` | Lab 00 | Low, and it is a checkpoint there |
+| A Curation policy scoped to the attendee's own remote | Lab 02 | Low. `jf curation-audit`'s challenge depends on it existing |
+| Finding, violation, severity, CVE, Contextual Analysis and its five verdicts | Lab 03 | Low, and the lab links back rather than redefining them |
+| Comfort editing `package.json` by hand | General | Low |
+
+**Not assumed:** any prior use of a CLI security tool, or that an attendee has
+ever seen a fixed-versions field before.
+
+### Introduces
+
+`jf audit`, `jf curation-audit`, and the idea that both run without a watch or
+a policy attached first. All defined inline and in the
+[glossary](glossary.md).
+
+### Establishes for later labs
+
+| Established | Used by |
+| --- | --- |
+| `axios` remediated to a patched version | 07, 09, 10 lose it as a finding |
+| `node-fetch` remediated to a patched `2.x` version | Same |
+| The habit of reading a fixed-versions field rather than guessing a version | 05, 06 |
+
+### Known gaps
+
+- **The exact default table columns `jf audit` prints have not been checked
+  against a live tenant.** Carries a VERIFY flag. If they differ from what the
+  lab describes, an attendee is not blocked, only mildly surprised.
+- **Whether a waived package like `highcharts` reports as blocked, warning or
+  approved under `jf curation-audit` is unconfirmed.** The lab hedges rather
+  than asserting one of the three.
+
+---
+
+## Lab 05: IDE
+
+**Format:** guided plus challenge. **Prerequisites:** labs 00, 01, 03.
+
+### Takes as given
+
+| Assumed | Where from | Risk |
+| --- | --- | --- |
+| The JFrog VS Code extension is already installed | The devcontainer, never taught explicitly before this lab | Low. The lab says so rather than assuming it went unnoticed |
+| A JFrog CLI server configuration named `workshop` | Lab 00 | Low. The extension is designed to reuse it |
+| Contextual Analysis and its five verdicts | Lab 03 | Low |
+| Basic VS Code navigation: the activity bar, opening a folder | General | Low |
+
+**Not assumed:** any prior use of a security-focused IDE extension, or any
+distinction between SCA and SAST before this lab draws it.
+
+### Introduces
+
+SCA versus SAST as a distinction rather than just a word, and the two SAST
+findings already documented in the sample application. Both are in the
+[glossary](glossary.md).
+
+### Establishes for later labs
+
+| Established | Used by |
+| --- | --- |
+| `lodash` remediated to a patched version | 07, 09, 10 lose it as a finding |
+| `moment` remediated to a patched version | Same |
+| The two SAST findings, read but never fixed | Nothing later depends on them remaining, they simply stay |
+
+### Known gaps
+
+- **The sign-in flow and the scan results layout both carry VERIFY flags.**
+  JFrog's own documentation describes two different shapes for the results
+  view depending on which page you read, and this workshop has not resolved
+  which one the pinned extension version actually shows.
+- **Whether a Codespace in this workshop has GitHub Copilot available is not
+  assumed anywhere load-bearing.** The Going further section mentions an
+  agent-assisted fix option, but nothing in the checkpoint or challenge
+  requires it.
+
+---
+
+## Lab 06: MCP
+
+**Format:** guided plus challenge, optional. **Prerequisites:** labs 00, 01,
+02, 04.
+
+### Takes as given
+
+| Assumed | Where from | Risk |
+| --- | --- | --- |
+| An AI coding agent is available in the room | Not guaranteed. The lab states this openly and nothing later depends on it | Medium, entirely outside this repository's control |
+| A JFrog CLI server configuration named `workshop`, for the `JF_URL` value | Lab 00 | Low |
+| The `highcharts` waiver and the immaturity policy from lab 02 | Lab 02 | Low, used only in Going further |
+| That the attendee's agent supports MCP configuration at all | General, true of most current coding agents | Low, and the lab is written host agnostically for exactly this reason |
+
+**Not assumed:** any prior use of MCP by name, or that the attendee's agent is
+any specific product.
+
+### Introduces
+
+MCP, the Model Context Protocol, and a second Curation condition, package
+version aged with no newer version identified, distinct from lab 02's
+immaturity condition. Both in the [glossary](glossary.md).
+
+### Establishes for later labs
+
+Nothing later depends on this lab, by design. See PLAN.md's R3: an AI coding
+agent may not be available on a given delivery, so nothing load-bearing can
+live only here.
+
+### Known gaps
+
+- **Whether the JFrog MCP Server is enabled on this workshop's tenant at all
+  is unconfirmed.** This is a platform administrator setting rather than
+  something an attendee can fix, and it is the largest open risk in this lab.
+- **The exact MCP client configuration shape and authorization flow have not
+  been checked against a live tenant or a specific agent.** The lab is
+  deliberately vague about which agent an attendee is using, which makes this
+  harder to pin down than the UI-navigation VERIFY flags elsewhere.
+
+---
+
 ## Later labs
 
-Added in build phases 4 to 6, as the labs are written.
+Added in build phases 5 to 6, as the labs are written.
 
 One thing to watch for as they land, because it is the most likely place for
 this file to go stale: **challenge labs are where an unnoticed assumption does

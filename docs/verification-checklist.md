@@ -15,13 +15,14 @@ thing in a week as it does today. Retire an ID rather than reusing it.
 | **HIGH** | Attendee-facing. A failure means someone is told to do something impossible. |
 | **MEDIUM** | Instructor-facing, or self-diagnosing with a clear error. |
 
-**Status:** build phase 2. Covers the skeleton, the devcontainer, the
-provisioning script, lab 00 and the sample application. Later build phases add
-further stages as labs land.
+**Status:** build phase 4. Covers the skeleton, the devcontainer, the
+provisioning script, the sample application and labs 00 to 06. Later build
+phases add further stages as labs land.
 
 Stages A, B, C, D and H are complete, and Stage E is complete apart from two
-items deferred here. **Stage G covers labs 01 to 03**, added in build phase 3, and
-is the next one to walk.
+items deferred here. Stage G covers labs 01 to 03, added in build phase 3.
+**Stage I covers labs 04 to 06**, added in build phase 4, and is the next one
+to walk.
 
 **How to record a result:** tick the box, and where an item says "record", write
 the answer inline. Several later decisions depend on these values.
@@ -1232,6 +1233,73 @@ Needed for phase 5, worth confirming while you are in here.
 
 - [ ] **F3. Actions on a fork.** *MEDIUM.* Confirm an attendee can enable
       Actions on their own fork, since labs 07 and 08 depend on it.
+
+---
+
+## Stage I: labs 04 to 06
+
+Added in build phase 4, following the same pattern as Stage G. Walk this as
+an attendee, with a second browser window as `workshop-admin` ready for lab
+06 step 4.
+
+- [ ] **I1. `jf audit` default table columns.** *MEDIUM.*
+      Lab 04 step 2. Run `jf audit` inside `apps/node-dashboard` and confirm
+      the default table includes severity, Contextual Analysis, direct or
+      transitive, the CVE and a fixed-versions field, without needing
+      `--extended-table`. **Record:** the actual column set, so the VERIFY
+      flag in the lab can be resolved one way or the other.
+
+- [ ] **I2. `jf curation-audit` output categories.** **HIGH.**
+      Lab 04's challenge. Run `jf curation-audit --working-dirs .` and
+      confirm the blocked, warning, approved shape, and specifically which
+      of those three a package with an active waiver, `highcharts@8.2.0`,
+      is reported under. This is the sharper of the two VERIFY flags in lab
+      04, because the challenge's success criteria depend on the answer.
+
+- [ ] **I3. The JFrog VS Code extension's sign-in flow.** **HIGH.**
+      Lab 05 step 1. Confirm the option to reuse the JFrog CLI's connection
+      details exists, its exact wording, and that it does not prompt for a
+      fresh credential.
+
+- [ ] **I4. The extension's results layout.** **HIGH.**
+      Lab 05 step 2. Confirm whether results appear as a single tree, or are
+      split across separate views for local work and CI results, or
+      something else entirely. JFrog's own documentation was inconsistent on
+      this point when the lab was written, which is exactly why it carries a
+      VERIFY flag rather than a guess presented as fact.
+
+- [ ] **I5. Contextual Analysis explanation text in the extension.**
+      *MEDIUM.* Lab 05 step 3. Confirm the extension shows written reasoning
+      for a verdict, not only the verdict word, for the lodash Critical.
+
+- [ ] **I6. `moment`'s two CVEs and which is Not Applicable.** **BLOCKER.**
+      Lab 05's challenge depends on this being genuinely true of one of
+      `CVE-2022-24785` or `CVE-2022-31129`, per PLAN.md section 6. If neither
+      comes back Not Applicable on this tenant, the challenge's premise fails
+      and the challenge needs rewriting, not just the lab text.
+
+- [ ] **I7. Whether the JFrog MCP Server is enabled on this tenant.**
+      **BLOCKER.** Lab 06. This is a platform administrator setting. If it is
+      off, lab 06 cannot be delivered at all and the instructor guide needs a
+      note on enabling it ahead of the day.
+
+- [ ] **I8. The MCP client configuration shape and authorization flow.**
+      **HIGH.** Lab 06 steps 1 and 2. Confirm against whichever AI coding
+      agent this workshop actually expects attendees to bring, since the lab
+      is deliberately written without assuming one.
+
+- [ ] **I9. The aged-package Curation condition's exact name.** *MEDIUM.*
+      Lab 06 step 4. Confirm the condition name and capitalization in the
+      Curation UI, and that selecting it and scoping it to the attendee's own
+      remote genuinely blocks `request@2.88.0` in step 5.
+
+- [ ] **I10. Documentation links resolve.** *MEDIUM.*
+      Labs 04 to 06 cite six JFrog documentation URLs. All six were checked
+      by title against `docs.jfrog.com` when the labs were written. Re-check
+      them here in case they have moved since.
+
+- [ ] **I11. Timings.** *MEDIUM.* Record how long each lab actually took, as
+      an attendee doing it properly rather than as its author, same as G12.
 
 ---
 

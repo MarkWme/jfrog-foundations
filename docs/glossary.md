@@ -228,11 +228,44 @@ vulnerabilities.
 
 ## Introduced in labs 04 to 06
 
-_Added in build phase 4. `jf audit`, `jf curation-audit`, SCA, SAST, secrets
-detection, IaC scanning, MCP server._
-
 Contextual Analysis, applicability, and direct versus transitive dependencies are
 already defined under lab 03 above, since lab 03 needs them first.
+
+**`jf audit`**
+The JFrog CLI command that scans your local project on demand and reports what
+Xray knows about it: dependency vulnerabilities, and by default also static
+analysis and secrets findings against your own source. No watch or policy is
+required first, unlike lab 03's violations.
+
+**`jf curation-audit`**
+The JFrog CLI command that checks a project's dependencies against Curation
+policy without installing anything, sorting each one into blocked, warning or
+approved.
+
+**SCA**
+Software composition analysis. The part of a scan that looks at third-party
+dependencies, as opposed to code you wrote yourself.
+
+**SAST**
+Static application security testing. The part of a scan that looks at your own
+source code for security issues, such as a JWT verification call that accepts
+any signing algorithm. A SAST finding is a bug in a file you can open, not a
+flaw in a package you depend on.
+
+**Secrets detection**
+The part of a scan that looks for credentials, tokens and keys accidentally
+committed into source code.
+
+**IaC scanning**
+Infrastructure as code scanning. The part of a scan that looks at
+configuration files, such as a Dockerfile or a Terraform file, for
+misconfigurations rather than application code.
+
+**MCP, Model Context Protocol**
+The protocol an AI coding agent uses to call an external tool rather than only
+generate text. The JFrog MCP Server exposes tools such as a Curation
+compliance check over this protocol, so an agent can ask a real question
+against your platform instead of guessing.
 
 ---
 

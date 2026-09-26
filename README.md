@@ -75,9 +75,9 @@ your footing improves.
 
 | Lab | Focus | Format | Status |
 | --- | --- | --- | --- |
-| 04 - CLI | JFrog CLI authentication, `jf audit`, `jf curation-audit` | Guided + challenge | Phase 4 |
-| 05 - IDE | The JFrog VS Code extension: SCA, SAST, Contextual Analysis | Guided + challenge | Phase 4 |
-| 06 - MCP _(optional)_ | The JFrog MCP Server, checking a dependency before you commit it | Guided + challenge | Phase 4 |
+| [04 - CLI](labs/04-cli/README.md) | JFrog CLI authentication, `jf audit`, `jf curation-audit` | Guided + challenge | Available |
+| [05 - IDE](labs/05-ide/README.md) | The JFrog VS Code extension: SCA, SAST, Contextual Analysis | Guided + challenge | Available |
+| [06 - MCP](labs/06-mcp/README.md) _(optional)_ | The JFrog MCP Server, checking a dependency before you commit it | Guided + challenge | Available |
 
 ### Part 3: CI integration
 
