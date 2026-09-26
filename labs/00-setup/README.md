@@ -184,11 +184,7 @@ change to do: the password on your handout is the one you keep.
 You land in the **All Projects** view, on a Best Practices page under
 **Get Started**.
 
-<!-- SCREENSHOT: labs/00-setup/images/all-projects-landing.png
-     Capture: the page a freshly provisioned attendee user lands on after first
-     sign-in, showing the All Projects context and the Get Started section in
-     the left-hand navigation. Replaces the stale
-     jfrog-platform-trial-welcome-screen.png. -->
+![alt text](images/setup-welcome-page.png)
 
 Have a quick look around, then read the next step before clicking anything else,
 because what you can see right now is **not** what you will be working with.
@@ -204,7 +200,7 @@ scoped to one project, and you have not entered it yet.
 Your project key is on your handout. Open the project selector at the top of the
 left-hand navigation menu:
 
-![The project selection dropdown](images/projects-selection.png)
+![alt text](images/setup-projects-list.png)
 
 You will see two entries: **All Projects**, and your own project. Everyone
 else's projects are invisible to you, which is the isolation described in the
@@ -225,29 +221,8 @@ Administration", that tab is what it means, and if you cannot see it, **the
 first thing to check is whether you are still in All Projects.**
 
 > [!IMPORTANT]
-> Stay in your own project for the whole workshop. You share this instance with
-> everyone else in the room, and your permissions are deliberately generous so
-> that the Curation labs work later on. Generous permissions mean you *can*
-> affect other people's work. Do not.
-
-One thing you will notice is missing: there is no **Curation** entry in the
-project menu. That is expected, and it is worth understanding now because it is
-the first time the platform will tell you "no".
-
-Curation does not yet support projects. It is configured for the whole instance,
-so a project-scoped account like yours cannot reach it at all. That is why your
-handout also carries a shared administrator account: lab 02 has you sign in as
-that account to work with Curation, and back as yourself afterwards.
-
-There are two useful things in that, and they both matter more than the
-inconvenience does:
-
-- **This is what platform access control looks like from the inside.** Your
-  account can do a great deal inside your project and nothing outside it. Being
-  told "no" here is the system working.
-- **It is temporary.** Project support for Curation is on the JFrog roadmap. When
-  it lands, this detour disappears and Curation joins everything else inside your
-  project.
+> Stay in your own project for the whole workshop unless instructed otherwise. You share this instance with
+> everyone else in the room.
 
 ### 7. Connect the JFrog CLI
 
