@@ -211,9 +211,7 @@ Go to the **Platform** tab, then **Artifactory**, then **Artifacts**, and expand
 You will find a repository you did not create: **`user01-npm-remote-cache`**. Expand the contents until you reach a folder called `ms`. Artifactory created the cache alongside your remote
 repository, and that is where the fetched copies live.
 
-<!-- SCREENSHOT: labs/01-artifactory/images/remote-cache-tree.png
-     Capture: the Artifacts tree with the -cache repository expanded showing the
-     ms package that was just fetched. -->
+![alt text](images/artifactory-artifacts-list.png)
 
 Run the same `npm pack` again and it is served from that cache. No request leaves your instance, nothing is requested from the public npm repositories.
 
